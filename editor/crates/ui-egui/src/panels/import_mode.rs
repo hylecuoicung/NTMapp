@@ -95,7 +95,7 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
     ui.interact(loc_r, egui::Id::unique("new-project-location"), Sense::hover()).on_hover_text(&shown);
     app.auto.add("newProject.location", loc_r, &location);
     let browse_r = Rect::from_min_size(pos2(loc_r.max.x + 8.0, loc_r.min.y), vec2(browse_w, FIELD_H));
-    if button(app, ui, browse_r, "newProject.browse", &tl!("Browse…"), false) {
+    if button(app, ui, browse_r, "newProject.browse", tl!("Browse…"), false) {
         let at = Some(location.clone()).filter(|l| !l.is_empty());
         let _ = app.pick(crate::native_dialogs::FileDialog::Folder { at }, |app, paths| {
             if let Some(p) = paths.into_iter().next() {
@@ -109,10 +109,10 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
     // Create, Open Project
     let create_r = Rect::from_min_size(pos2(left, y), vec2(150.0, 36.0));
     let open_r = Rect::from_min_size(pos2(create_r.max.x + 10.0, y), vec2(170.0, 36.0));
-    if button(app, ui, create_r, "newProject.create", &tl!("Create"), true) || enter {
+    if button(app, ui, create_r, "newProject.create", tl!("Create"), true) || enter {
         create(app, &ctx);
     }
-    if button(app, ui, open_r, "import.file.open", &tl!("Open project…"), false) {
+    if button(app, ui, open_r, "import.file.open", tl!("Open project…"), false) {
         let r = crate::menus::invoke(app, &ctx, "file.open", json!({}));
         // a cancelled file dialog answers null: stay on Home
         if r.is_ok_and(|v| !v.is_null()) {

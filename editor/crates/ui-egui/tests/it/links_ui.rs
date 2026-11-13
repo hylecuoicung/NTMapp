@@ -97,9 +97,7 @@ fn community_links_everywhere() {
     d.ok("engine.execute", json!({"command": "app.about", "params": {}}));
     d.frames(3);
     let about = d.ids("about.");
-    for id in ["about.discord"] {
-        assert!(about.iter().any(|a| a == id), "{id} in {about:?}");
-    }
+    assert!(about.iter().any(|a| a == "about.discord"), "about.discord in {about:?}");
     d.snapshot("about");
     d.ok("ui.key", json!({"key": "Escape"}));
     d.frames(3);
@@ -108,8 +106,6 @@ fn community_links_everywhere() {
     d.ok("engine.execute", json!({"command": "mode.import", "params": {}}));
     d.frames(3);
     let home = d.ids("import.link.");
-    for id in ["import.link.discord"] {
-        assert!(home.iter().any(|a| a == id), "{id} in {home:?}");
-    }
+    assert!(home.iter().any(|a| a == "import.link.discord"), "import.link.discord in {home:?}");
     d.snapshot("home");
 }
