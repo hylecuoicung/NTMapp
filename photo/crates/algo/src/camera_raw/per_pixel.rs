@@ -237,7 +237,7 @@ pub fn white_black_points(px: &[[f32; 4]], w: usize, h: usize, p: &CameraRaw) ->
 /// without a spatial stage and without `points`. The points themselves leave Calibration out, so a
 /// caller may cache them across Calibration changes.
 pub fn per_pixel(p: &CameraRaw, w: usize, h: usize, float: bool, points: Option<(f32, f32)>) -> Option<PerPixel> {
-    if p.detail_on() || !p.calibration_neutral() {
+    if p.detail_on() || !p.calibration_neutral() || p.masks_active() {
         return None;
     }
     // The develop leaves frames under 2 pixels on a side alone.

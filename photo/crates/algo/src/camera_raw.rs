@@ -25,6 +25,8 @@
 //!    an edge mask) and noise reduction (luminance by guided filter, colour by chroma blur).
 //! 9. **Effects**: post-crop vignette (amount, midpoint, roundness, feather, highlights,
 //!    style) and grain (amount, size, roughness; position-hashed, deterministic).
+//! 10. **Masking**: Linear and Radial Gradient masks, each developing a copy with its own
+//!     sliders and mixing it over the picture by its coverage (see [`masks`]).
 
 #![allow(clippy::needless_range_loop)] // index loops mirror the maths (pixels × channels)
 
@@ -56,6 +58,7 @@ pub fn validate_curve(points: &[[f32; 2]]) -> Result<(), String> {
 use crate::photo_util::{hash01, linear_to_srgb, par_rows, srgb_to_linear};
 
 pub mod local_tone;
+pub mod masks;
 mod per_pixel;
 pub mod spatial;
 mod whites_blacks;
@@ -181,6 +184,9 @@ pub struct CameraRaw {
     pub calibration_hue: [f32; 3],
     /// Red, Green and Blue Primary › Saturation: −100 (grey) … 100 (purer).
     pub calibration_sat: [f32; 3],
+    // Masking (local adjustments): applied after everything above, in order.
+    /// Linear and Radial Gradient masks with their own sliders (see [`masks`]).
+    pub masks: Vec<masks::LocalMask>,
 }
 
 impl Default for CameraRaw {
@@ -240,6 +246,7 @@ impl Default for CameraRaw {
             shadow_tint: 0.0,
             calibration_hue: [0.0; 3],
             calibration_sat: [0.0; 3],
+            masks: Vec::new(),
         }
     }
 }
@@ -604,6 +611,15 @@ impl CameraRaw {
         ] {
             validate_curve(curve).map_err(|e| format!("{name}: {e}"))?;
         }
+        self.validate_masks()
+    }
+    fn validate_masks(&self) -> Result<(), String> {
+        if self.masks.len() > masks::MAX_MASKS {
+            return Err(format!("masks: at most {} masks", masks::MAX_MASKS));
+        }
+        for (i, m) in self.masks.iter().enumerate() {
+            m.validate().map_err(|e| format!("masks[{i}]: {e}"))?;
+        }
         Ok(())
     }
     /// [`validate`](Self::validate) for an edit of `stored` settings: a curve left as stored is
@@ -618,6 +634,9 @@ impl CameraRaw {
             if curve != kept {
                 validate_curve(curve).map_err(|e| format!("{name}: {e}"))?;
             }
+        }
+        if self.masks != stored.masks {
+            self.validate_masks()?;
         }
         Ok(())
     }
@@ -646,6 +665,11 @@ impl CameraRaw {
             && [&self.point_curve, &self.point_curve_red, &self.point_curve_green, &self.point_curve_blue].iter().all(|c| is_linear(c))
     }
     /// True when every control is neutral (the filter is an identity).
+    /// Whether any mask would change the picture. The GPU preview does not run masks.
+    pub fn masks_active(&self) -> bool {
+        self.masks.iter().take(masks::MAX_MASKS).any(|m| !m.is_neutral())
+    }
+
     pub fn is_identity(&self) -> bool {
         self.wb_neutral()
             && self.calibration_neutral()
@@ -661,6 +685,7 @@ impl CameraRaw {
             && self.noise_color == 0.0
             && self.grain_amount == 0.0
             && self.vignette_amount == 0.0
+            && self.masks.iter().take(masks::MAX_MASKS).all(masks::LocalMask::is_neutral)
     }
 }
 
@@ -850,6 +875,10 @@ pub fn develop(px: &mut [[f32; 4]], w: usize, h: usize, p: &CameraRaw, float: bo
                 }
             }
         });
+    }
+    // 10. Masking: local adjustments over the globally developed picture.
+    if !p.masks.is_empty() {
+        masks::apply(px, w, h, p, float);
     }
     if !float {
         for q in px.iter_mut() {

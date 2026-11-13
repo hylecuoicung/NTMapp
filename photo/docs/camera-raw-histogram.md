@@ -50,7 +50,7 @@ filter; they are never silently written as default Camera Raw settings.
 
 Active manual lens distortion/vignetting, luminance-noise contrast, color-noise smoothness,
 post-crop vignette style (`PCVS`, still unverified) and highlights, RAW Kelvin white balance,
-masks and HDR still need mapping and/or rendering support. Observed neutral-only controls are
+masks (see [Local Adjustments](camera-raw-masks.md)) and HDR still need mapping and/or rendering support. Observed neutral-only controls are
 retained in the template; non-neutral values keep the filter opaque. In the updated fixture,
 Distortion −28, Lens Vignetting 28 and `PCVS=1` keep the entire filter opaque, while all settings
 survive PSD and `.pcraft` saves. Its supported controls are also checked as a descriptor-only

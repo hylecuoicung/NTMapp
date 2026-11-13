@@ -195,6 +195,7 @@ pub(super) fn open_pixels(
         before_display_key: None,
         dirty: true,
         show_before: false,
+        mask_sel: None,
         mixer_tab: 1,
         curve_state: Default::default(),
         curve_rect: None,

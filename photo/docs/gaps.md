@@ -205,8 +205,9 @@ what an agent can't finish alone.
 ### G14. Camera Raw depth
 - **Missing:** CR3 sensor data (the embedded preview opens; the CRX codec has no public
   specification, only LGPL implementations, so a clean-room decoder is not possible), compressed
-  RAF, highlight recovery modes (FILE-215-11), masking in the Camera Raw dialog, per-camera
-  colour for non-DNG cameras, lens profiles.
+  RAF, highlight recovery modes (FILE-215-11), per-camera colour for non-DNG cameras, lens
+  profiles, and the masks beyond Linear and Radial Gradient (Brush, ranges, subject and sky
+  selection: [camera-raw-masks.md](camera-raw-masks.md)).
 - **Done 2026-10-13:** lossy DNG decodes (#5112); `.xmp` sidecars beside raw files fill the
   open-time dialog and Open writes them back; the Camera Raw Defaults preferences (colour space,
   bit depth, resolution, Sharpen For, Open as Smart Object, Apply auto tone, sidecars) all take

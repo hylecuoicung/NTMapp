@@ -322,3 +322,15 @@ fn unsupported_or_malformed_exports_report_errors() {
     let wrong = Descriptor::new("filterFX").with("filterID", Value::Integer(1));
     assert!(export_item(&json!({TEMPLATE_KEY: to_hex(&wrong.to_bytes())})).is_err());
 }
+
+/// Local adjustments have no verified PSD mapping: a filter that carries active masks must be
+/// refused (so the export warns and leaves it out) instead of being written as if the masks were
+/// default settings. Neutral masks and an empty list are the defaults.
+#[test]
+fn masks_have_no_verified_mapping_and_an_empty_list_is_the_default() {
+    let active = json!({"masks": [{"shape": "linear", "exposure": 1.0}]});
+    let error = export_item(&active).expect_err("active masks cannot be written");
+    assert!(error.contains("masks"), "{error}");
+    assert!(export_item(&json!({"masks": []})).is_ok());
+    assert!(export_item(&json!({})).is_ok());
+}

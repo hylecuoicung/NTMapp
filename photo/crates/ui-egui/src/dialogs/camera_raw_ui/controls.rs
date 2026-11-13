@@ -114,7 +114,7 @@ pub(super) fn mixer_gradient(tab: usize, k: usize) -> Vec<Color32> {
     if tab == 0 { vec![hue(k + bands.len() - 1), hue(k), hue(k + 1)] } else { vec![Color32::from_gray(128), hue(k)] }
 }
 
-fn row(ui: &mut egui::Ui, dirty: &mut bool, label: &str, v: &mut f32, range: std::ops::RangeInclusive<f32>, grad: Option<&[Color32]>) {
+pub(super) fn row(ui: &mut egui::Ui, dirty: &mut bool, label: &str, v: &mut f32, range: std::ops::RangeInclusive<f32>, grad: Option<&[Color32]>) {
     let _ = slider(ui, dirty, label, v, range, grad);
 }
 
@@ -297,6 +297,12 @@ fn draw(app: &mut PhotocraftApp, ctx: &egui::Context, own_window: bool) {
             d.dirty = true;
         }
         d.curve_rect = None;
+        // The mask being edited follows the list: none without masks, the first when it is lost.
+        if d.params.masks.is_empty() {
+            d.mask_sel = None;
+        } else if d.mask_sel.is_none_or(|i| i >= d.params.masks.len()) {
+            d.mask_sel = Some(0);
+        }
         d.scope.vectorscope_rect = None;
         if let Err(e) = d.poll_render(ctx) {
             d.preview_error = Some((e.clone(), d.preview_revision));
@@ -356,6 +362,10 @@ fn draw(app: &mut PhotocraftApp, ctx: &egui::Context, own_window: bool) {
             }
             d.scope.preview_rect = Some(r);
             crate::camera_raw_scope_ui::preview(&mut preview, d, scope, r, &response, panning);
+            // Local Adjustments: the selected mask's guides and handles, over the picture.
+            if d.target != Target::OpenRaw && !d.show_before && super::masks::overlay(&mut preview, &mut d.params, d.mask_sel, r, &t) {
+                d.dirty = true;
+            }
         }
         if let Some(region) = zoom_box {
             preview.painter().rect_stroke(region, 0.0, egui::Stroke::new(1.0, t.accent), egui::StrokeKind::Inside);
@@ -380,8 +390,11 @@ fn draw(app: &mut PhotocraftApp, ctx: &egui::Context, own_window: bool) {
         crate::camera_raw_scope_ui::header(&mut props, d, scope);
         d.scope.alt_tone = None;
         let mut dirty = false;
+        // The open-time dialog's sidecar has no place for masks (see `masks` in the algorithm).
+        let masks_allowed = d.target != Target::OpenRaw;
         egui::ScrollArea::vertical().id_salt("camera-raw-props").show(&mut props, |ui| {
             ui.spacing_mut().item_spacing.y = 4.0;
+            let mask_sel = &mut d.mask_sel;
             let p = &mut d.params;
             let proxy = &d.proxy;
             let alt = &mut d.scope.alt_tone;
@@ -400,6 +413,9 @@ fn draw(app: &mut PhotocraftApp, ctx: &egui::Context, own_window: bool) {
                 tone_row(ui, &mut dirty, alt, ToneZone::Whites, &mut p.whites);
                 tone_row(ui, &mut dirty, alt, ToneZone::Blacks, &mut p.blacks);
             });
+            if masks_allowed {
+                section(ui, "Local Adjustments", false, |ui| super::masks::section_body(ui, p, mask_sel, &mut dirty));
+            }
             section(ui, "Color", false, |ui| {
                 widgets::section_label(ui, tl!("White Balance: As Shot"));
                 row(ui, &mut dirty, "Temperature", &mut p.temperature, -100.0..=100.0, Some(&ts));

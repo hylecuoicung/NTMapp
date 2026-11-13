@@ -79,10 +79,9 @@ mod tests {
     fn link_commands_open_their_urls() {
         let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
         let ctx = egui::Context::default();
-        for (id, url) in [("help.discord", "https://discord.com/channels/1004088367216070770/1004088367824248976")] {
-            let r = crate::menus::invoke(&mut app, &ctx, id, serde_json::json!({})).unwrap();
-            assert_eq!(r["url"], url);
-            assert_eq!(app.ui.status, format!("Opened {url}"));
-        }
+        let url = "https://discord.com/channels/1004088367216070770/1004088367824248976";
+        let r = crate::menus::invoke(&mut app, &ctx, "help.discord", serde_json::json!({})).unwrap();
+        assert_eq!(r["url"], url);
+        assert_eq!(app.ui.status, format!("Opened {url}"));
     }
 }

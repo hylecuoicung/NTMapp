@@ -32,6 +32,7 @@ use crate::widgets;
 mod controls;
 mod convert;
 mod filmstrip;
+mod masks;
 mod menu;
 mod open;
 mod proxy;
@@ -98,6 +99,8 @@ pub struct CameraRawDialog {
     histogram_ms: f64,
     pub(crate) dirty: bool,
     pub show_before: bool,
+    /// The Local Adjustments mask being edited, and drawn on the preview.
+    pub(crate) mask_sel: Option<usize>,
     mixer_tab: usize,
     pub render_ms: f64,
     /// Set for the open-time dialog ([`Target::OpenRaw`]).
@@ -135,6 +138,7 @@ impl CameraRawDialog {
             Target::SmartFilter(index) => Some(index),
             Target::NewFilter | Target::OpenRaw => None,
         });
+        result["maskSelected"] = json!(self.mask_sel);
         result["openingRaw"] = json!(self.raw_open.as_ref().map(|r| json!({"name": r.name, "path": r.path, "demosaic": r.demosaic.id()})));
         result["view"] = json!(navigation);
         result["sourceSize"] = json!([self.full_w, self.full_h]);
