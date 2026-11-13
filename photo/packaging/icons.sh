@@ -14,9 +14,8 @@ trap 'rm -rf "$TMP"' EXIT
 
 command -v resvg >/dev/null || { echo "error: resvg not found (brew install resvg)" >&2; exit 1; }
 
-# The artwork is a full-bleed 512-unit tile (rx=112). macOS icons pad it to Apple's 824/1024 body
-# grid (transparent margin). Windows and Linux use the whole tile, so their corners are as round
-# as the other Craft apps' (#4478).
+# The artwork is the NTM Digital Photo logo on a transparent 512-unit canvas. macOS icons pad it to
+# Apple's 824/1024 body grid (transparent margin). Windows and Linux use it at full size.
 grep -q 'viewBox="0 0 512 512"' "$SVG" || { echo "error: expected viewBox=\"0 0 512 512\" in $SVG" >&2; exit 1; }
 MAC="$TMP/mac.svg"
 sed 's/viewBox="0 0 512 512"/viewBox="-62 -62 636 636"/' "$SVG" >"$MAC"
@@ -31,7 +30,7 @@ for s in 16 24 32 48 64 128 256 512; do
   render "$SVG" "$s" "$DIR/hicolor/${s}x${s}/apps/ai.storyteller.photocraft.png"
 done
 mkdir -p "$DIR/hicolor/scalable/apps"
-# The lighter trace (photocraft-small.svg) keeps the scalable theme icon cheap to render.
+# photocraft-small.svg is the same drawing; it is also the scalable theme icon.
 cp "$DIR/photocraft-small.svg" "$DIR/hicolor/scalable/apps/ai.storyteller.photocraft.svg"
 
 # Windows .ico.

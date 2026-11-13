@@ -1,13 +1,14 @@
-FilmCraft app icon (filmcraft.svg and every file derived from it in this directory:
+NTM Digital Editor app icon (filmcraft.svg and every file derived from it in this directory:
 filmcraft-small.svg, filmcraft-1024.png, filmcraft-macos-512.png, filmcraft.icns, filmcraft.ico,
 hicolor/, and apps/filmcraft-web/web/favicon.png).
 
-Original artwork made for this project by the FilmCraft owner (Brandon Thomas) in ArtCraft, then
-vectorised. No third-party material. Licensed like the rest of FilmCraft, under either of
+The artwork is the logo of NTM Digital Editor. The NTM Digital name and logo are trademarks
+of NTM Digital. All rights reserved.
 
-  * Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0)
-  * MIT license (https://opensource.org/licenses/MIT)
+They are not open source and are not covered by the MIT / Apache-2.0 licence of the code in this
+repository. They identify the builds NTM Digital publishes. You may build and run this
+repository unchanged with them in place; if you publish a modified version, replace them with
+your own name and artwork.
 
-at your option.
-
+The files keep the names upstream FilmCraft uses, so the build and packaging scripts find them.
 Regenerate the derived files with packaging/icons.sh.

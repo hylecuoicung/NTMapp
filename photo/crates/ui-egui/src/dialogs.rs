@@ -400,12 +400,12 @@ fn dialog_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, d: &Dialog, fields: &
             }
         }
         DialogKind::About => {
-            // Tabs About · Contributors · Models. The
-            // tab is a dialog field, so automation can switch it with `ui.dialog.set`.
+            // Tabs About · Models. The tab is a dialog field, so automation can switch it with
+            // `ui.dialog.set`.
             let tab = about_tab(fields);
             let mut chosen = tab;
             ui.horizontal(|ui| {
-                for (key, label) in [("about", tl!("About")), ("contributors", tl!("Contributors")), ("models", tl!("Models"))] {
+                for (key, label) in [("about", tl!("About")), ("models", tl!("Models"))] {
                     if crate::widgets::pill_tab(ui, label, tab == key).clicked() {
                         chosen = key;
                     }
@@ -826,7 +826,7 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
 }
 
 /// The About window's tabs, as stored in its `tab` field.
-pub const ABOUT_TABS: [&str; 3] = ["about", "contributors", "models"];
+pub const ABOUT_TABS: [&str; 2] = ["about", "models"];
 
 /// The About tab to show: the `tab` field when it names one, otherwise "about".
 fn about_tab(fields: &serde_json::Map<String, Value>) -> &'static str {
@@ -834,22 +834,19 @@ fn about_tab(fields: &serde_json::Map<String, Value>) -> &'static str {
     ABOUT_TABS.iter().copied().find(|t| *t == want).unwrap_or("about")
 }
 
-/// One About tab's contents: the credits lists, or the product blurb and links.
+/// One About tab's contents: the models list, or the product blurb and the Discord button.
 fn about_tab_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, tab: &str) {
     match tab {
-        "contributors" => crate::credits::contributors_ui(app, ui),
         "models" => crate::credits::models_ui(ui),
         _ => {
-            ui.label(tl!("PhotoCraft — an open-source, native image editor written in Rust."));
+            ui.label("NTM Digital Photo — a native image editor.");
             ui.label(crate::i18n::fmt(tl!("Version {version}"), &[("version", &photocraft_engine::build_info::long_version())]));
             ui.add_space(12.0);
             ui.vertical_centered(|ui| {
                 crate::links::discord_button(app, ui, 220.0);
-                ui.add_space(8.0);
-                crate::links::link_row(app, ui);
             });
             ui.add_space(10.0);
-            ui.weak("egui · wgpu · photocraft-engine");
+            ui.weak("Copyright 2026. NTM Digital. Built on the open-source PhotoCraft (MIT OR Apache-2.0).");
         }
     }
 }
@@ -880,7 +877,7 @@ pub fn title(d: &Dialog) -> String {
     match d.kind {
         DialogKind::NewDocument => "New Document".into(),
         DialogKind::About if d.fields.get("systemInfo").and_then(Value::as_bool) == Some(true) => "System Info".into(),
-        DialogKind::About => "About PhotoCraft".into(),
+        DialogKind::About => "About NTM Digital Photo".into(),
         DialogKind::LayerStyle => "Layer Style".into(),
         DialogKind::Command => d.fields.get("__label").and_then(Value::as_str).unwrap_or("Command").trim_end_matches('…').to_string(),
         DialogKind::Error => "Error".into(),

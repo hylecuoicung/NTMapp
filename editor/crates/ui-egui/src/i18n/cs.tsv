@@ -14,7 +14,7 @@
 #   escapes  \n  \t  \\ inside a column. Keep {name} placeholders in both columns.
 #   lines starting with # and blank lines are ignored.
 
-	About FilmCraft	O aplikaci FilmCraft
+	About NTM Digital Editor	O aplikaci NTM Digital Editor
 	Add Audio Submix Track	Přidat stopu zvukové podskupiny
 	Add Caption at Playhead	Přidat titulek na pozici přehrávací hlavy
 	Add Chapter Marker…	Přidat značku kapitoly…
@@ -167,7 +167,7 @@
 	Guide Templates	Šablony vodítek
 	Help	Nápověda
 	Hide All Caption Tracks	Skrýt všechny stopy titulků
-	Hide FilmCraft	Skrýt FilmCraft
+	Hide NTM Digital Editor	Skrýt NTM Digital Editor
 	Hide Others	Skrýt ostatní
 	High Quality Playback	Přehrávání ve vysoké kvalitě
 	History	Historie
@@ -3223,7 +3223,7 @@
 	QuickTime, ProRes 4444 (4:4:4) with alpha channel, 24-bit 48 kHz PCM	QuickTime, ProRes 4444 (4:4:4) s alfa kanálem, 24bitové PCM 48 kHz
 	QuickTime, ProRes 4444 XQ (4:4:4), 24-bit 48 kHz PCM	QuickTime, ProRes 4444 XQ (4:4:4), 24bitové PCM 48 kHz
 	QuickTime, ProRes 422, 24-bit 48 kHz PCM	QuickTime, ProRes 422, 24bitové PCM 48 kHz
-	Quit FilmCraft	Ukončit FilmCraft
+	Quit NTM Digital Editor	Ukončit NTM Digital Editor
 	Rate Stretch Tool	Nástroj Změna rychlosti
 	Razor Tool	Nástroj Žiletka
 	Rectangle Tool	Nástroj Obdélník
@@ -3606,7 +3606,7 @@
 	Recent	Nedávné
 	Saves this session's log and shows it in your file manager.	Uloží protokol této relace a zobrazí jej ve správci souborů.
 	Shows a report on this computer.	Zobrazí zprávu o tomto počítači.
-	Shows the version, community links and credits in a FilmCraft window.	Zobrazí verzi, odkazy na komunitu a poděkování v okně FilmCraft.
+	Shows the version, community links and credits in an NTM Digital Editor window.	Zobrazí verzi, odkazy na komunitu a poděkování v okně NTM Digital Editor.
 	no Korean font is installed on this system; the interface stays in English	v systému není nainstalováno korejské písmo; rozhraní zůstává v angličtině
 	Animate zoom, scrolling and menus	Animovat přibližování, posouvání a nabídky
 	No matching text.	Žádný odpovídající text.

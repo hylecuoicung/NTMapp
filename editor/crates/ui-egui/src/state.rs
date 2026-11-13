@@ -453,6 +453,9 @@ pub struct UiState {
     pub language: crate::i18n::Language,
     pub tool: Tool,
     pub mode: Mode,
+    /// The New Project form on Home.
+    #[serde(default)]
+    pub new_project: crate::panels::import_mode::NewProjectDraft,
     pub workspace: String,
     /// The panel arrangement in use: craft-ui's frame tree and floating windows.
     pub dock: crate::dock::Layout,
@@ -1014,6 +1017,7 @@ impl Default for UiState {
             language: crate::i18n::Language::default(),
             tool: Tool::Selection,
             mode: Mode::Edit,
+            new_project: Default::default(),
             workspace: "Editing".into(),
             closed_floating: vec![],
             dock: crate::dock::workspace("Editing"),

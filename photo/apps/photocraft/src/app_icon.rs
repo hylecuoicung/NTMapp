@@ -15,7 +15,7 @@
 //! be stamped on the shortcut, or the taskbar would stop matching the two.
 
 /// Window, taskbar and (when running unbundled) Dock icon. macOS gets the padded 1024 px render
-/// on Apple's icon grid; elsewhere the 256 px hicolor render of the full tile.
+/// on Apple's icon grid; elsewhere the 256 px hicolor render of the mark at full size.
 pub fn window_icon() -> egui::IconData {
     match eframe::icon_data::from_png_bytes(PNG) {
         Ok(icon) => icon,
@@ -109,13 +109,14 @@ mod tests {
     }
 
     #[test]
-    fn windows_and_linux_icons_keep_the_round_corners() {
-        // rx=112 of 512 leaves (10, 10) of a 256 px render transparent; the old crop filled it (#4478).
+    fn windows_and_linux_icons_are_the_mark_on_a_transparent_ground() {
+        // The NTM Digital Photo logo is a shape, not a tile: its corners are transparent and the
+        // lens in the middle is opaque.
         let png = include_bytes!("../../../assets/app-icon/hicolor/256x256/apps/ai.storyteller.photocraft.png");
         let icon = eframe::icon_data::from_png_bytes(png).unwrap();
         assert_eq!(icon.width, 256);
         assert_eq!(icon.rgba[(10 * 256 + 10) * 4 + 3], 0, "corner is transparent");
-        assert_eq!(icon.rgba[(128 * 256 + 2) * 4 + 3], 255, "the tile is full bleed");
+        assert_eq!(icon.rgba[(132 * 256 + 100) * 4 + 3], 255, "the lens is opaque");
     }
 
     /// The `.ico` build.rs embeds: every size Windows asks for, each a valid PNG or BMP image.

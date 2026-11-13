@@ -1,30 +1,19 @@
 //! Community and project links (Help menu, About dialog, header Discord button, Home screen).
 //!
-//! FilmCraft is part of the ArtCraft family: the community lives on the ArtCraft Discord, every
-//! app has a page on the ArtCraft website and a public GitHub repository.
+//! The link of this build: its community Discord.
 
 /// The app's short name, used in the website and repository URLs.
 pub const APP: &str = "filmcraft";
 
-/// The ArtCraft community Discord.
-pub const DISCORD: &str = "https://discord.gg/artcraft";
-/// The ArtCraft website.
-pub const WEBSITE: &str = "https://getartcraft.com";
-/// FilmCraft's page on the ArtCraft website.
-pub const APP_PAGE: &str = "https://getartcraft.com/apps/filmcraft";
+/// The community Discord.
+pub const DISCORD: &str = "https://discord.com/channels/1004088367216070770/1004088367824248976";
 /// FilmCraft's source repository.
 pub const GITHUB: &str = "https://github.com/storytold/filmcraft";
 /// New issue on FilmCraft's repository.
 pub const ISSUES: &str = "https://github.com/storytold/filmcraft/issues";
 
 /// (command id, label, url) for every link, in menu order.
-pub const ALL: [(&str, &str, &str); 5] = [
-    ("help.discord", "Join the ArtCraft Discord…", DISCORD),
-    ("help.website", "ArtCraft Website", WEBSITE),
-    ("help.appPage", "FilmCraft on getartcraft.com", APP_PAGE),
-    ("help.github", "FilmCraft on GitHub", GITHUB),
-    ("help.reportIssue", "Report an Issue…", ISSUES),
-];
+pub const ALL: [(&str, &str, &str); 1] = [("help.discord", "Join the NTM Discord…", DISCORD)];
 
 /// A link the web browser couldn't open (`ui.failedLink`): the address and the reason.
 #[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -49,8 +38,8 @@ pub fn menu_hint(command: &str) -> Option<String> {
         match command {
             "help.revealLogFiles" => tl!("Saves this session's log and shows it in your file manager."),
             "help.systemCompatibilityReport" => tl!("Shows a report on this computer."),
-            "app.about" => tl!("Shows the version, community links and credits in a FilmCraft window."),
-            "app.checkForUpdates" => tl!("Looks for a newer FilmCraft release and offers to update."),
+            "app.about" => tl!("Shows the version, community links and credits in an NTM Digital Editor window."),
+            "app.checkForUpdates" => tl!("Looks for a newer release and offers to download it."),
             _ => return None,
         }
         .to_string(),
@@ -126,10 +115,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn urls_follow_the_artcraft_scheme() {
-        assert_eq!(APP_PAGE, format!("{WEBSITE}/apps/{APP}"));
-        assert_eq!(GITHUB, format!("https://github.com/storytold/{APP}"));
-        assert!(ALL.iter().all(|(id, _, u)| id.starts_with("help.") && u.starts_with("https://")));
+    fn links_are_help_commands_with_web_addresses() {
+        assert!(ALL.iter().all(|(id, _, u)| id.starts_with("help.") && (u.starts_with("https://") || u.starts_with("http://"))));
         assert_eq!(url_for("help.discord"), Some(DISCORD));
         assert_eq!(url_for("help.nope"), None);
     }
@@ -228,7 +215,7 @@ mod tests {
         for id in &help_items {
             let hint = menu_hint(id).unwrap_or_else(|| panic!("{id} has no hover hint"));
             let link = url_for(id).is_some() || id == "help.filmcraftHelp";
-            assert_eq!(hint.starts_with("https://"), link, "{id}: {hint}");
+            assert_eq!(hint.starts_with("https://") || hint.starts_with("http://"), link, "{id}: {hint}");
         }
         assert_eq!(menu_hint("edit.undo"), None);
     }

@@ -1,4 +1,9 @@
 //! One background check at startup and a non-modal window for release information.
+//!
+//! This build is not code-signed, and the updater installs only signed packages. So a newer
+//! release is announced by this module's own prompt ([`Runtime::prompt`]) with a Download button
+//! that opens the installer in the web browser, instead of the updater's Update and Restart,
+//! which would download the package and then refuse it.
 
 use photocraft_engine::updates_cmds::Status;
 use serde_json::Value;
@@ -17,6 +22,9 @@ pub(crate) struct Runtime {
     /// The check running was asked for with Help ▸ Check for Updates.
     #[cfg(not(target_arch = "wasm32"))]
     requested: bool,
+    /// The prompt that announces a newer release, with Download and Later.
+    #[cfg(not(target_arch = "wasm32"))]
+    prompt: Option<craft_update::StartupPrompt>,
 }
 
 impl Default for Runtime {
@@ -30,17 +38,20 @@ impl Default for Runtime {
             last_update: craft_update::updater::Status::Idle,
             #[cfg(not(target_arch = "wasm32"))]
             requested: false,
+            #[cfg(not(target_arch = "wasm32"))]
+            prompt: None,
         }
     }
 }
 
-/// The release the engine found, as `craft-update` knows it.
+/// The release the engine found, as `craft-update` knows it. Its address is where Download goes:
+/// the package for this copy of the app (chosen by the desktop app's check), or the release page.
 #[cfg(not(target_arch = "wasm32"))]
 fn release_of(found: &photocraft_engine::updates_cmds::Release) -> craft_update::Release {
     craft_update::Release {
         tag: format!("v{}", found.version),
         version: craft_update::parse_version(&found.version),
-        name: format!("PhotoCraft {}", found.version),
+        name: format!("NTM Digital Photo {}", found.version),
         html_url: found.url.clone(),
         ..Default::default()
     }
@@ -97,13 +108,12 @@ pub(crate) fn tick(app: &mut PhotocraftApp, ctx: &egui::Context) {
         app.ui.updates_open = true;
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let updater = &mut app.updates_rt.updater;
-            updater.offer(release_of(release));
-            // While an update installs or waits for the app to close, or while the launcher keeps
-            // this version, no prompt opens: a manual check reports that state in the result window.
-            if std::mem::take(&mut app.updates_rt.requested) && !updater.prompt_open() {
-                updater.check_now(ctx);
-            }
+            // This build's own prompt, whose main button reads Download: the updater's would offer
+            // Update and Restart, which an unsigned build refuses after downloading the package.
+            let mut prompt = craft_update::StartupPrompt::new(&crate::UPDATE_APP, release_of(release), photocraft_engine::build_info::VERSION);
+            prompt.is_self_updating = false;
+            app.updates_rt.prompt = Some(prompt);
+            app.updates_rt.requested = false;
         }
     }
     #[cfg(not(target_arch = "wasm32"))]
@@ -147,10 +157,25 @@ pub(crate) fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
             app.ui.updates_open = app.updates_rt.last_update != craft_update::updater::Status::Idle;
         }
     }
+    // This build's own prompt for a newer release (see `tick`): Download opens the package in the
+    // web browser, Later closes it until the next start or manual check.
+    let mut prompt_closed = false;
+    if let Some(prompt) = &mut app.updates_rt.prompt {
+        if prompt.show(ctx) == craft_update::StartupPromptResponse::Download {
+            download = Some(prompt.release.html_url.clone());
+            prompt.open = false;
+        }
+        prompt_closed = !prompt.open;
+    }
+    if prompt_closed {
+        app.updates_rt.prompt = None;
+        // The last self-update's outcome, hidden while the prompt showed, is still shown after it.
+        app.ui.updates_open = app.updates_rt.last_update != craft_update::updater::Status::Idle;
+    }
     if let Some(url) = download {
         crate::links::open(app, ctx, &url);
     }
-    if app.updates_rt.updater.prompt_open() {
+    if app.updates_rt.updater.prompt_open() || app.updates_rt.prompt.is_some() {
         return;
     }
     let status = shown_status(app);
@@ -303,7 +328,7 @@ mod tests {
             .unwrap()
             .as_ref()
             .unwrap()
-            .send(Ok(Some(Release { version: "99.0.0".into(), url: "https://github.com/storytold/photocraft/releases/tag/v99.0.0".into() })))
+            .send(Ok(Some(Release { version: "99.0.0".into(), url: "https://github.com/hylecuoicung/NTMapp/releases/tag/photo-v99.0.0".into() })))
             .unwrap();
         app.run("updates.status", serde_json::json!({})).unwrap();
         at(&mut app, &ctx, 1.0);
@@ -324,17 +349,22 @@ mod tests {
             .unwrap()
             .as_ref()
             .unwrap()
-            .send(Ok(Some(Release { version: "99.0.0".into(), url: "https://github.com/storytold/photocraft/releases/tag/v99.0.0".into() })))
+            .send(Ok(Some(Release { version: "99.0.0".into(), url: "https://github.com/hylecuoicung/NTMapp/releases/tag/photo-v99.0.0".into() })))
             .unwrap();
         at(&mut app, &ctx, 1.0);
-        assert!(app.updates_rt.updater.prompt_open(), "startup prompt initialized on available release");
+        // This build's own prompt opens, whose main button is Download: the updater's would offer
+        // Update and Restart, which an unsigned build refuses.
+        let prompt = app.updates_rt.prompt.as_ref().expect("the prompt opens for an available release");
+        assert!(!prompt.is_self_updating && prompt.open);
+        assert_eq!(prompt.release.html_url, "https://github.com/hylecuoicung/NTMapp/releases/tag/photo-v99.0.0", "where Download goes");
+        assert!(!app.updates_rt.updater.prompt_open(), "the updater's own prompt stays closed");
 
-        // Rendering show() renders the prompt modal
+        // Rendering show() renders the prompt modal, which stays until Download or Later
         let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
             show(&mut app, ui.ctx());
         });
         output.textures_delta.clear();
-        assert!(app.updates_rt.updater.prompt_open());
+        assert!(app.updates_rt.prompt.is_some());
     }
 
     #[cfg(not(target_arch = "wasm32"))]

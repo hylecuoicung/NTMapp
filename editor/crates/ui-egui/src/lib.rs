@@ -6,14 +6,23 @@
 
 #![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
 
-/// FilmCraft as craft-update knows it, with its 128 px icon and accent colour: the update
-/// prompt shows both, and an AppImage's menu entry gets the icon.
+/// This build as craft-update knows it, with its 128 px icon and accent colour: the update
+/// prompt shows both. Releases are looked up in this fork's repository, which holds more than one
+/// app (see `release_feed`), and `id` is the stem
+/// of their file names (`ntmdigital-editor-<version>-windows-x64.msi`, see `packaging/windows`).
 #[cfg(not(target_arch = "wasm32"))]
 pub const UPDATE_APP: craft_update::app::App = craft_update::app::App {
+    id: "ntmdigital-editor",
+    name: "NTM Digital Editor",
+    repo: "hylecuoicung/NTMapp",
+    developer: "NTM Digital",
     icon_png: Some(include_bytes!("../../../assets/app-icon/hicolor/128x128/apps/ai.storyteller.filmcraft.png")),
     accent: Some([0x8b, 0x5c, 0xf6]),
     ..craft_update::suite::FILMCRAFT
 };
+
+#[cfg(not(target_arch = "wasm32"))]
+pub mod release_feed;
 
 /// A literal UI string in the language the interface is drawn in (`i18n::t`). Only literals: the
 /// i18n tests read every `tl!` literal in the crate and require a Spanish translation for it.

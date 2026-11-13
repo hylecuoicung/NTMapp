@@ -12,7 +12,7 @@
 # product UI was consulted or copied; add entries the same way. Product and technology names
 # (FilmCraft, ArtCraft, ProRes, LUFS, H.264…) keep their spelling.
 
-	About FilmCraft	FilmCraft Hakkında
+	About NTM Digital Editor	NTM Digital Editor Hakkında
 	Add Audio Submix Track	Ses Alt Miksaj İzi Ekle
 	Add Caption at Playhead	Oynatma Kafasına Altyazı Ekle
 	Add Chapter Marker…	Bölüm İşaretçisi Ekle…
@@ -1834,7 +1834,7 @@
 	Height	Yükseklik
 	Hexagon	Altıgen
 	Hide Back Face	Arka Yüzü Gizle
-	Hide FilmCraft	FilmCraft'ı Gizle
+	Hide NTM Digital Editor	NTM Digital Editor'ı Gizle
 	Hide Others	Diğerlerini Gizle
 	High	Yüksek
 	High Cutoff	Yüksek Kesme
@@ -3236,7 +3236,7 @@
 	QuickTime, ProRes 4444 (4:4:4) with alpha channel, 24-bit 48 kHz PCM	QuickTime, alfa kanallı ProRes 4444 (4:4:4), 24 bit 48 kHz PCM
 	QuickTime, ProRes 4444 XQ (4:4:4), 24-bit 48 kHz PCM	QuickTime, ProRes 4444 XQ (4:4:4), 24 bit 48 kHz PCM
 	QuickTime, ProRes 422, 24-bit 48 kHz PCM	QuickTime, ProRes 422, 24 bit 48 kHz PCM
-	Quit FilmCraft	FilmCraft'tan Çık
+	Quit NTM Digital Editor	NTM Digital Editor'tan Çık
 	Rate Stretch Tool	Oran Uzatma Aracı
 	Razor Tool	Jilet Aracı
 	Rectangle Tool	Dikdörtgen Aracı
@@ -3600,7 +3600,7 @@
 	Opens in your web browser: {url}	Web tarayıcınızda açılır: {url}
 	Saves this session's log and shows it in your file manager.	Bu oturumun günlüğünü kaydeder ve dosya yöneticinizde gösterir.
 	Shows a report on this computer.	Bu bilgisayar hakkında bir rapor gösterir.
-	Shows the version, community links and credits in a FilmCraft window.	Sürümü, topluluk bağlantılarını ve jeneriği bir FilmCraft penceresinde gösterir.
+	Shows the version, community links and credits in an NTM Digital Editor window.	Sürümü, topluluk bağlantılarını ve jeneriği bir NTM Digital Editor penceresinde gösterir.
 	Couldn't open your web browser	Web tarayıcınız açılamadı
 	Open this address in your browser yourself:	Bu adresi tarayıcınızda kendiniz açın:
 

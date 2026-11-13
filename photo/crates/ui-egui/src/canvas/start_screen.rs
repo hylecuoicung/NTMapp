@@ -140,31 +140,8 @@ fn render_start_rail(app: &mut PhotocraftApp, ui: &mut egui::Ui, rail_w: f32) {
     crate::icons::paint(ui, house_box, "house", 16.0, t.text);
     ui.painter().text(egui::pos2(home_rect.left() + 34.0, home_rect.center().y), egui::Align2::LEFT_CENTER, tl!("Home"), crate::theme::semibold(13.5), t.text);
 
-    ui.add_space(4.0);
-
-    // 4. "Learn" Nav Item
-    let (learn_rect, learn_resp) = ui.allocate_exact_size(egui::vec2(rail_w, 32.0), Sense::click());
-    let learn_resp = learn_resp.on_hover_cursor(egui::CursorIcon::PointingHand);
-    learn_resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, tl!("Learn")));
-    if learn_resp.hovered() {
-        ui.painter().rect_filled(learn_rect, 4.0, t.hover);
-    }
-    let learn_color = if learn_resp.hovered() { t.text } else { t.text_dim };
-    let sparkle_box = Rect::from_center_size(egui::pos2(learn_rect.left() + 20.0, learn_rect.center().y), egui::vec2(16.0, 16.0));
-    crate::icons::paint(ui, sparkle_box, "sparkles", 16.0, learn_color);
-    ui.painter().text(
-        egui::pos2(learn_rect.left() + 34.0, learn_rect.center().y),
-        egui::Align2::LEFT_CENTER,
-        tl!("Learn"),
-        crate::theme::semibold(13.5),
-        learn_color,
-    );
-    if learn_resp.clicked() {
-        crate::links::open(app, ui.ctx(), crate::links::TUTORIALS);
-    }
-
-    // 5. Bottom pinned community links
-    let bottom_h = 100.0;
+    // 4. Bottom pinned community link
+    let bottom_h = 44.0;
     let avail_h = ui.available_height();
     let spacer = (avail_h - bottom_h - 20.0).max(24.0);
     ui.add_space(spacer);
@@ -174,9 +151,7 @@ fn render_start_rail(app: &mut PhotocraftApp, ui: &mut egui::Ui, rail_w: f32) {
 
     ui.add_space(8.0);
 
-    render_rail_link(app, ui, rail_w, tl!("Website"), "link", crate::links::APP_PAGE);
     render_rail_link(app, ui, rail_w, tl!("Discord"), "message-square", crate::links::DISCORD);
-    render_rail_link(app, ui, rail_w, tl!("GitHub"), "link-2", crate::links::GITHUB);
 }
 
 fn render_rail_link(app: &mut PhotocraftApp, ui: &mut egui::Ui, rail_w: f32, label: &str, icon_name: &str, url: &str) {
@@ -199,7 +174,7 @@ fn render_start_content(app: &mut PhotocraftApp, ui: &mut egui::Ui, recent: &[St
     let t = crate::theme::Tokens::get(ui.ctx());
     ui.add_space(8.0);
 
-    // Top Row: [01] PhotoCraft
+    // Top Row: [01] the product name
     ui.horizontal(|ui| {
         let badge_size = egui::vec2(24.0, 19.0);
         let (badge_rect, _) = ui.allocate_exact_size(badge_size, Sense::hover());
@@ -208,7 +183,7 @@ fn render_start_content(app: &mut PhotocraftApp, ui: &mut egui::Ui, recent: &[St
 
         ui.add_space(10.0);
 
-        let title_galley = ui.painter().layout_no_wrap(tl!("PhotoCraft").into(), crate::theme::semibold(20.0), t.text);
+        let title_galley = ui.painter().layout_no_wrap(crate::panels::APP_TITLE.into(), crate::theme::semibold(20.0), t.text);
         let (title_r, _) = ui.allocate_exact_size(title_galley.size(), Sense::hover());
         ui.painter().galley(title_r.min, title_galley, t.text);
     });

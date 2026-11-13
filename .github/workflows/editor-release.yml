@@ -1,0 +1,92 @@
+name: NTM Digital Editor Release
+
+# Builds the Windows installer and portable zip of NTM Digital Editor (the editor/ folder) and publishes
+# them as a GitHub release tagged editor-v<version>. The app looks for a newer release with that
+# tag prefix when it starts (editor/crates/ui-egui/src/release_feed.rs) and offers its installer for download.
+#
+# Run it by hand (Actions > NTM Digital Editor Release > Run workflow), or push a tag such as
+# editor-v0.21.0. A release must have a higher version than the one people run, or their app
+# offers nothing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish, e.g. 0.21.0. Empty: major.minor of editor/Cargo.toml, then one more than the last editor release of that major.minor.'
+        required: false
+        type: string
+  push:
+    tags: ['editor-v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: editor
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: editor
+      - name: Install WiX v5
+        run: |
+          dotnet tool install --global wix --version 5.0.2
+          wix extension add --global WixToolset.UI.wixext/5.0.2 WixToolset.Util.wixext/5.0.2
+      - name: Choose the version
+        id: version
+        shell: pwsh
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = "$env:INPUT_VERSION".Trim()
+          if ($env:GITHUB_REF_TYPE -eq 'tag') { $version = $env:GITHUB_REF_NAME -replace '^editor-v', '' }
+          if (-not $version) { $version = "$(& ./packaging/windows/next-version.ps1 -TagPrefix editor- | Select-Object -Last 1)".Trim() }
+          # Windows Installer versions are three numbers; the last one goes up to 65535.
+          if ($version -notmatch '^\d{1,3}\.\d{1,3}\.\d{1,5}$') { throw "version must be three numbers like 0.21.0, got '$version'" }
+          gh release view "editor-v$version" --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -eq 0) { throw "release editor-v$version already exists; choose a higher version" }
+          $global:LASTEXITCODE = 0
+          cargo xtask version set $version
+          if ($LASTEXITCODE -ne 0) { throw 'cargo xtask version set failed' }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Output "Publishing NTM Digital Editor $version"
+      - name: Build the installer and portable zip
+        shell: pwsh
+        env:
+          FILMCRAFT_REQUIRE_WINRES: '1'
+        run: pwsh packaging/windows/package.ps1 -Arch x64
+      - name: Write SHA256SUMS.txt
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $files = Get-ChildItem dist/release -File | Where-Object { $_.Name -ne 'SHA256SUMS.txt' } | Sort-Object Name
+          if (-not $files) { throw 'nothing was built in dist/release' }
+          $lines = $files | ForEach-Object { '{0}  {1}' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(), $_.Name }
+          [IO.File]::WriteAllText((Join-Path (Resolve-Path dist/release) 'SHA256SUMS.txt'), (($lines -join "`n") + "`n"))
+          Get-Content dist/release/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ntmdigital-editor-windows-x64
+          path: |
+            editor/dist/release/*
+      - name: Publish the release
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = '${{ steps.version.outputs.version }}'
+          $files = (Get-ChildItem dist/release -File).FullName
+          $target = @()
+          if ($env:GITHUB_REF_TYPE -ne 'tag') { $target = @('--target', $env:GITHUB_SHA) }
+          $notes = "NTM Digital Editor $version for Windows x64: the installer (.msi), the portable copy (-portable.zip) and their checksums (SHA256SUMS.txt)."
+          gh release create "editor-v$version" @files --repo $env:GITHUB_REPOSITORY @target --title "NTM Digital Editor $version" --notes $notes
+          if ($LASTEXITCODE -ne 0) { throw 'gh release create failed' }

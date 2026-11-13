@@ -1,6 +1,6 @@
-//! The PhotoCraft brand mark at the left of the title bar: the app icon (the kitsune,
-//! `assets/app-icon/`, see its README), where Photoshop shows its "Ps" tile. The PNG carries the
-//! icon's rounded corners; it is decoded once per context into a mipmapped texture, so it stays
+//! The brand mark at the left of the title bar: the app icon (the NTM Digital Photo logo,
+//! `assets/app-icon/`, see its README), where Photoshop shows its "Ps" tile. The PNG is the mark on
+//! a transparent ground; it is decoded once per context into a mipmapped texture, so it stays
 //! crisp at the title bar's size on any display scale.
 
 use egui::{Color32, Context, Id, Rect, TextureHandle, TextureOptions, Ui, pos2};
@@ -55,10 +55,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_icon_decodes_to_a_rounded_128_px_tile() {
+    fn the_icon_decodes_to_a_128_px_mark_on_a_transparent_ground() {
         let img = decode();
         assert_eq!(img.size, [128, 128]);
-        // Rounded corners: the corner pixel is transparent, the centre opaque.
+        // A shape, not a tile: the corner pixel is transparent, the centre (the lens) opaque.
         assert_eq!(img.pixels[0].a(), 0);
         assert_eq!(img.pixels[64 * 128 + 64].a(), 255);
     }

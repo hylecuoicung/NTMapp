@@ -1,39 +1,44 @@
-# PhotoCraft app icon
+# NTM Digital Photo app icon
 
-A **nine-tailed kitsune with a brow diamond**: an engraving portrait, seated, looking back at the
-viewer, in the Crafting Apps' owl-template framing (full-bleed field, head and body filling the
-tile, tails running off the edges).
+The **logo of NTM Digital Photo**: a cyan camera with a teal field at its lower left, a lens with
+one glint inside a white ring, and one loose cyan square at the lower right, on a transparent
+ground. The NTM Digital Editor logo has the same ring and square. It stays readable at
+16 px.
 
 ## Palette
 
-Exactly three colours:
-
 | Colour | Hex | Used for |
 |---|---|---|
-| Ink | `#0b0b0c` | line work and contours |
-| Paper | `#efe9dc` | the figure |
-| PhotoCraft blue (app colour) | `#2f7bf5` | the full-bleed field |
+| Cyan | `#01b1de` | camera body and the loose square |
+| Teal | `#3da992` | field at the lower left, fading into the cyan at the bottom |
+| White | `#ffffff` | lens ring and the glint |
+| Near-black | `#2f2d2f` | lens |
 
 ## Geometry
 
-A 512-unit tile (`viewBox="0 0 512 512"`), rounded square with `rx=112`, no border. The macOS
-renders pad it onto Apple's 824/1024 icon grid; the Windows and Linux renders use the whole tile,
-as the other Crafting Apps do.
+A 512-unit canvas (`viewBox="0 0 512 512"`) with no background; the mark fills 94 % of its width.
+One path for the camera (three rounded corners, a notch for the loose square), the teal field
+clipped to it (a crisp arc on the left, a short gradient into the cyan under the lens), one square
+and three circles. The macOS renders pad it onto Apple's 824/1024 icon grid; the Windows and Linux
+renders use it at full size.
 
 ## Provenance
 
-The owner's original drawing, made in ArtCraft (2880 px, engraving style, keyed to the palette),
-vectorised. License: see `LICENSE.txt`.
+The owner's logo (a 1254 px raster), redrawn as paths and circles fitted to it and compared with it
+pixel by pixel. It replaced the first mark (a lens over four colour blocks) on 2026-11-12. Licence: see `LICENSE.txt` (a trademark, not open source).
 
 ## Files
 
-- `photocraft.svg`: canonical master (traced at 2048 px).
-- `photocraft-small.svg`: lighter trace (traced at 1024 px); also the hicolor scalable icon.
+The files keep the names upstream PhotoCraft uses, so the build and packaging scripts find them.
+
+- `photocraft.svg`: canonical master. `photocraft-small.svg` is the same drawing; it is also the
+  hicolor scalable icon.
 - `photocraft-1024.png`: 1024 px render on the macOS grid.
 - `photocraft.icns`: macOS bundle icon (`CFBundleIconFile`).
 - `photocraft.ico`: Windows icon, 16–256 px, embedded in the `.exe` by `apps/photocraft/build.rs`.
 - `hicolor/<size>/apps/ai.storyteller.photocraft.png` (16–512) and `hicolor/scalable/...svg`:
-  Linux icon theme.
+  Linux icon theme. The 128 px render is also the title bar's mark and the update prompt's icon,
+  and the 256 px one is the window icon and the installer wizard's art.
 
 The app also sets the window icon and Wayland app ID at runtime (`apps/photocraft/src/app_icon.rs`,
 `main.rs`). On Windows the taskbar shows the icon of the Start Menu shortcut that launches the

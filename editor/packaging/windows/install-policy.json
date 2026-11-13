@@ -1,24 +1,25 @@
 {
   "id": "filmcraft",
-  "name": "FilmCraft",
-  "upgradeCode": "31E6FB14-9DBC-41DD-B24B-26B71FB31B62",
+  "name": "NTMDigitalEditor",
+  "upgradeCode": "BB5F6996-DF46-4CB3-9742-12A7CE95C4F6",
   "sources": [
     "filmcraft.wxs"
   ],
   "icon": "assets/app-icon/filmcraft.ico",
   "localization": [],
   "extensions": [
-    "UI"
+    "UI",
+    "Util"
   ],
   "payloads": [
     "NOTICE",
-    "filmcraft-cli.exe",
-    "filmcraft.exe"
+    "ntmdigital-editor-cli.exe",
+    "ntmdigital-editor.exe"
   ],
   "registry": [
     [
       "-1",
-      "Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\filmcraft.exe",
+      "Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\ntmdigital-editor.exe",
       "",
       "[#FilmcraftExe]"
     ]

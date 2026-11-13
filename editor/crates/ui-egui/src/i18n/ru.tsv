@@ -3,7 +3,7 @@
 # Full interface coverage: every string of the reference catalog is translated into Russian with
 # ordinary video-editing vocabulary. Clean-room: written from the plain meaning of the English
 # text; no proprietary localization resource, string table or product interface was consulted.
-	About FilmCraft	О FilmCraft
+	About NTM Digital Editor	О NTM Digital Editor
 	Add Audio Submix Track	Добавить дорожку подмикширования аудио
 	Add Caption at Playhead	Добавить субтитр в позиции курсора
 	Add Chapter Marker…	Добавить маркер главы…
@@ -1828,7 +1828,7 @@
 	Height	Высота
 	Hexagon	Шестиугольник
 	Hide Back Face	Скрыть обратную сторону
-	Hide FilmCraft	Скрыть FilmCraft
+	Hide NTM Digital Editor	Скрыть NTM Digital Editor
 	Hide Others	Скрыть остальные
 	High	Высокий
 	High Cutoff	Срез ВЧ
@@ -3230,7 +3230,7 @@
 	QuickTime, ProRes 4444 (4:4:4) with alpha channel, 24-bit 48 kHz PCM	QuickTime, ProRes 4444 (4:4:4) с альфа-каналом, PCM 24 бит, 48 кГц
 	QuickTime, ProRes 4444 XQ (4:4:4), 24-bit 48 kHz PCM	QuickTime, ProRes 4444 XQ (4:4:4), PCM 24 бит, 48 кГц
 	QuickTime, ProRes 422, 24-bit 48 kHz PCM	QuickTime, ProRes 422, PCM 24 бит, 48 кГц
-	Quit FilmCraft	Выйти из FilmCraft
+	Quit NTM Digital Editor	Выйти из NTM Digital Editor
 	Rate Stretch Tool	Растяжение скорости
 	Razor Tool	Лезвие
 	Rectangle Tool	Прямоугольник
@@ -3593,7 +3593,7 @@
 	Opens in your web browser: {url}	Откроется в браузере: {url}
 	Saves this session's log and shows it in your file manager.	Сохраняет журнал этого сеанса и показывает его в файловом менеджере.
 	Shows a report on this computer.	Показывает отчёт о компьютере.
-	Shows the version, community links and credits in a FilmCraft window.	Показывает версию, ссылки сообщества и список участников в окне FilmCraft.
+	Shows the version, community links and credits in an NTM Digital Editor window.	Показывает версию, ссылки сообщества и список участников в окне NTM Digital Editor.
 	Couldn't open your web browser	Не удалось открыть браузер
 	Open this address in your browser yourself:	Этот адрес нужно открыть в браузере вручную:
 	Reset Interface Zoom	Сбросить масштаб интерфейса
