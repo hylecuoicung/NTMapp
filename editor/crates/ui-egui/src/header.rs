@@ -1,7 +1,7 @@
-//! The header bar (Premiere 26 layout, 38 pt): Home and Import / Edit / Export on the left, the
+//! The header (Premiere 26 layout): Home and Import / Edit / Export on the left of a 38 pt bar, the
 //! document title centred, the workspace name and quick actions on the right. On macOS the menus
-//! live in the native menu bar (set up by the app); elsewhere a compact in-window menu bar follows
-//! the mode tabs.
+//! live in the native menu bar (set up by the app); elsewhere the in-window menu bar is its own
+//! row on top, above that bar, as in Premiere on Windows.
 
 use egui::{Color32, Rect, Sense, Stroke, pos2, vec2};
 
@@ -13,15 +13,27 @@ use crate::theme::Tokens;
 /// Height of the header bar. With `integrated_titlebar` it sits in the macOS title-bar strip.
 pub const HEIGHT: f32 = 38.0;
 
-/// Draws the header bar in `rect` and handles its clicks: Home, the mode tabs, the workspace name
-/// and its menu (the workspaces, then Reset to Saved Layout, Save Changes to this Workspace, Save as
-/// New Workspace… and Edit Workspaces…), Discord and the quick actions.
-pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
+/// Height of the in-window menu bar's row (File, Edit, …), drawn above the bar.
+pub const MENU_HEIGHT: f32 = 28.0;
+
+/// Height of the whole header: the bar, and the menu bar's row above it when there is one.
+pub fn total_height(menu_bar: bool) -> f32 {
+    HEIGHT + if menu_bar { MENU_HEIGHT } else { 0.0 }
+}
+
+/// Draws the header in `full` (see [`total_height`]) and handles its clicks: the menus, Home, the
+/// mode tabs, the workspace name and its menu (the workspaces, then Reset to Saved Layout, Save
+/// Changes to this Workspace, Save as New Workspace… and Edit Workspaces…), Discord and the quick
+/// actions.
+pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, full: Rect) {
     let t = app.tokens;
     let p = ui.painter().clone();
-    p.rect_filled(rect, 0.0, t.header_bg);
-    p.line_segment([rect.left_bottom(), rect.right_bottom()], Stroke::new(1.0, Color32::BLACK));
-    let drag = ui.interact(rect, egui::Id::unique("header-drag"), Sense::click_and_drag());
+    // The menu bar's row on top; `rect` is the bar below it, which everything else lays out in.
+    let menu_row = Rect::from_min_size(full.min, vec2(full.width(), if app.ui.show_menu_bar { MENU_HEIGHT } else { 0.0 }));
+    let rect = Rect::from_min_max(pos2(full.min.x, menu_row.max.y), full.max);
+    p.rect_filled(full, 0.0, t.header_bg);
+    p.line_segment([full.left_bottom(), full.right_bottom()], Stroke::new(1.0, Color32::BLACK));
+    let drag = ui.interact(full, egui::Id::unique("header-drag"), Sense::click_and_drag());
     if drag.drag_started_by(egui::PointerButton::Primary) {
         ui.ctx().send_viewport_cmd(egui::ViewportCommand::StartDrag);
     }
@@ -60,16 +72,15 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
         }
         x += gw + 24.0;
     }
-    let mut left_end = x;
-    // In-window menus when there is no native menu bar.
+    let left_end = x;
+    // In-window menus when there is no native menu bar: their own row above the bar.
     if app.ui.show_menu_bar {
-        let menu_rect = Rect::from_min_max(pos2(x + 6.0, rect.min.y + 7.0), pos2(x + 520.0, rect.max.y - 7.0));
+        let menu_rect = Rect::from_min_max(pos2(menu_row.min.x + 8.0, menu_row.min.y + 2.0), pos2(menu_row.max.x - 8.0, menu_row.max.y - 2.0));
         let mut mu = ui.new_child(egui::UiBuilder::new().max_rect(menu_rect).layout(egui::Layout::left_to_right(egui::Align::Center)));
         mu.style_mut().visuals.widgets.inactive.weak_bg_fill = Color32::TRANSPARENT;
         mu.style_mut().visuals.widgets.inactive.bg_stroke = Stroke::NONE;
-        mu.style_mut().visuals.override_text_color = Some(t.text_dim);
+        mu.style_mut().visuals.override_text_color = Some(t.text);
         crate::menus::menu_bar(app, &mut mu);
-        left_end = mu.min_rect().max.x;
     }
     // Document title, centred
     let title = if app.session.is_dirty() { tlf!("{name} - Edited", name = app.session.project.name) } else { app.session.project.name.clone() };
@@ -206,6 +217,8 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
     fn workspace_name_uppercasing_is_turkish_aware() {
         crate::i18n::set_current(crate::i18n::Language::Tr);
@@ -213,5 +226,55 @@ mod tests {
         assert_eq!(crate::i18n::to_uppercase("Altyazılar ve Grafikler"), "ALTYAZILAR VE GRAFİKLER");
         crate::i18n::set_current(crate::i18n::Language::En);
         assert_eq!(crate::i18n::to_uppercase("Birleştirme"), "BIRLEŞTIRME");
+    }
+
+    /// Draws the header in a 1400-wide window and returns where each automation id landed
+    /// (`[x, y, width, height]`).
+    fn layout(show_menu_bar: bool) -> (FilmcraftApp, f32) {
+        let mut app = FilmcraftApp::new(filmcraft_engine::Session::default());
+        app.ui.show_menu_bar = show_menu_bar;
+        let ctx = egui::Context::default();
+        let height = total_height(show_menu_bar);
+        for _ in 0..2 {
+            app.auto.begin_frame();
+            let input = egui::RawInput { screen_rect: Some(Rect::from_min_size(pos2(0.0, 0.0), vec2(1400.0, 900.0))), ..Default::default() };
+            let mut out = ctx.run_ui(input, |ui| show(&mut app, ui, Rect::from_min_size(pos2(0.0, 0.0), vec2(1400.0, height))));
+            out.textures_delta.clear();
+        }
+        (app, height)
+    }
+
+    fn rect(app: &FilmcraftApp, id: &str) -> [f32; 4] {
+        app.auto.elements.iter().find(|e| e.id == id).unwrap_or_else(|| panic!("no element {id}")).rect
+    }
+
+    /// As in Premiere on Windows, the menus (File, Edit, …) are the top row; Home and
+    /// Import / Edit / Export are the bar below them, and the bar keeps its own height.
+    #[test]
+    fn the_menu_bar_is_its_own_row_above_the_mode_bar() {
+        let (app, height) = layout(true);
+        assert_eq!(height, HEIGHT + MENU_HEIGHT);
+        let file = rect(&app, "menu.File");
+        let help = rect(&app, "menu.Help");
+        assert!(file[1] + file[3] <= MENU_HEIGHT + 0.5, "the menus sit in the top row: {file:?}");
+        assert!(help[0] > file[0], "the menus run left to right: {file:?} {help:?}");
+        for id in ["header.home", "header.mode.import", "header.mode.edit", "header.mode.export", "header.discord"] {
+            let r = rect(&app, id);
+            assert!(r[1] >= MENU_HEIGHT - 0.5, "{id} is below the menu row: {r:?}");
+            assert!(r[1] + r[3] <= height + 0.5, "{id} is inside the header: {r:?}");
+        }
+        // the mode tabs no longer share their row with the menus
+        let edit = rect(&app, "header.mode.edit");
+        assert!(file[1] + file[3] <= edit[1], "File is above Edit: {file:?} {edit:?}");
+    }
+
+    /// Without an in-window menu bar (macOS has the native one) the header is the bar alone.
+    #[test]
+    fn without_a_menu_bar_the_header_is_just_the_bar() {
+        let (app, height) = layout(false);
+        assert_eq!(height, HEIGHT);
+        assert!(app.auto.elements.iter().all(|e| !e.id.starts_with("menu.")), "no in-window menus");
+        let home = rect(&app, "header.home");
+        assert!(home[1] >= 0.0 && home[1] + home[3] <= HEIGHT + 0.5, "{home:?}");
     }
 }
