@@ -219,10 +219,7 @@ fn dnxhr_export_roundtrip() {
 /// `burn_captions` or above the caption.
 #[test]
 fn caption_burn_in_h264_ffmpeg_oracle() {
-    let Some(ffmpeg) = ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/usr/bin/ffmpeg"].into_iter().find(|p| std::path::Path::new(p).exists()) else {
-        eprintln!("ffmpeg not found; skipping oracle test");
-        return;
-    };
+    let Some(ffmpeg) = filmcraft_testkit::ffmpeg_or_skip("H.264 caption burn-in export") else { return };
     let mut p = Project::new("cap");
     let (w, h) = (640u32, 360u32);
     let g = GeneratorSource::new(Generator::ColorMatte { color: [0.0, 0.0, 0.2, 1.0] }, w, h, FrameRate::FPS_24, Tick(2 * TICKS_PER_SECOND));
@@ -269,7 +266,7 @@ fn caption_burn_in_h264_ffmpeg_oracle() {
         let path = tmp(if burn { "burn.mp4" } else { "noburn.mp4" });
         let s = ExportSettings { format: Format::H264, path: path.clone(), include_audio: false, burn_captions: burn, ..Default::default() };
         export(&p, seq, &s, &m, &Progress::default()).unwrap();
-        let out = std::process::Command::new(ffmpeg)
+        let out = std::process::Command::new(&ffmpeg)
             .args(["-v", "error", "-i", &path, "-vf", "select=eq(n\\,12)", "-frames:v", "1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"])
             .output()
             .unwrap();
@@ -606,6 +603,36 @@ fn h264_input_converted_ahead_encodes_to_the_same_packets() {
     let plain = encode_all(false);
     assert!(!plain.is_empty());
     assert!(plain == encode_all(true), "converting ahead changed the packets");
+}
+
+/// The report names the video encoder that ran. An export that asked for hardware encoding and got
+/// the software encoder says so: a two-pass H.264 export with Hardware encoding Auto came out of the
+/// software encoder with nothing saying that NVENC had not run. No hardware encoder is registered
+/// here, so the software one runs both passes, and the warning comes once.
+#[test]
+fn the_report_names_the_encoder_and_says_when_hardware_was_not_used() {
+    let (p, seq, m) = project();
+    let two_pass = ExportSettings {
+        format: Format::H264,
+        path: tmp("hw-auto.mp4"),
+        hardware_encoding: HardwareEncoding::Auto,
+        bitrate_mode: BitrateMode::Vbr2Pass,
+        ..Default::default()
+    };
+    let r = export(&p, seq, &two_pass, &m, &Progress::default()).unwrap();
+    assert_eq!(r.encoder.as_deref(), Some("software"));
+    assert_eq!(r.warnings, ["hardware encoding is Auto, but no hardware H.264 encoder is available here; the software encoder ran"]);
+    let json = serde_json::to_value(&r).unwrap();
+    assert_eq!(json["encoder"], "software");
+    assert_eq!(json["warnings"][0], r.warnings[0].as_str());
+    // hardware encoding Off (the default): the encoder is named, and there is nothing to warn about
+    let r = export(&p, seq, &ExportSettings { format: Format::ProRes, path: tmp("hw-off.mov"), ..Default::default() }, &m, &Progress::default()).unwrap();
+    assert_eq!(r.encoder.as_deref(), Some("software"));
+    assert!(serde_json::to_value(&r).unwrap().get("warnings").is_none(), "no empty list");
+    // an export without a video encoder names none
+    let r = export(&p, seq, &ExportSettings { format: Format::Wav, path: tmp("hw.wav"), ..Default::default() }, &m, &Progress::default()).unwrap();
+    assert_eq!(r.encoder, None);
+    assert!(serde_json::to_value(&r).unwrap().get("encoder").is_none());
 }
 
 /// #4656: the APV encoder for 4:4:4 profiles, driven directly.
