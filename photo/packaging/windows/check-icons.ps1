@@ -8,9 +8,13 @@
   can display a generic document icon even when the ICO data and application are valid.
 #>
 param(
-  [string] $WxsPath = (Join-Path $PSScriptRoot 'photocraft.wxs')
+  [string] $WxsPath = (Join-Path $PSScriptRoot 'photocraft.wxs'),
+  [string] $Brand = $env:NTM_BRAND
 )
 $ErrorActionPreference = 'Stop'
+# The exe's name is the brand's (package.ps1 passes it to wix as -d ExeName=...).
+. (Join-Path $PSScriptRoot '..\..\..\brand\brand.ps1')
+$Names = Get-Brand $Brand
 [xml] $Wxs = Get-Content -LiteralPath $WxsPath -Raw
 $Ns = [Xml.XmlNamespaceManager]::new($Wxs.NameTable)
 $Ns.AddNamespace('w', 'http://wixtoolset.org/schemas/v4/wxs')
@@ -33,6 +37,7 @@ foreach ($shortcut in $Wxs.SelectNodes('//w:File/w:Shortcut[@Advertise="yes"]', 
   $fileName = if ($file.HasAttribute('Name')) { $file.GetAttribute('Name') } else { $file.GetAttribute('Source') }
   # Source paths use Windows separators even when this check runs on Linux in packaging-lint.
   $fileName = ($fileName -split '[\\/]')[-1]
+  $fileName = $fileName.Replace('$(var.ExeName)', "$($Names['PHOTO_EXE']).exe").Replace('$(var.CliExeName)', "$($Names['PHOTO_EXE'])-cli.exe")
   $targetExtension = [IO.Path]::GetExtension($fileName)
   if ($iconExtension -ne $targetExtension) {
     throw "Advertised shortcut '$id' icon '$iconId' must match target '$fileName' extension '$targetExtension' (ICE50)."
