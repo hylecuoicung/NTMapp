@@ -123,6 +123,11 @@ jobs:
         env:
           FILMCRAFT_REQUIRE_WINRES: '1'
         run: pwsh packaging/windows/package.ps1 -Arch x64
+      - name: Check the installer is still the product people have
+        shell: pwsh
+        run: |
+          $msi = (Get-ChildItem dist/release -Filter '*.msi' | Select-Object -First 1).FullName
+          ../brand/check-identity.ps1 -App editor -Msi $msi
       - name: Write SHA256SUMS.txt
         shell: pwsh
         run: |
