@@ -11,15 +11,17 @@
   Get-WixDefines              the -d arguments that hand an app's names and GUIDs to `wix build`
   Read-BrandedJson            a JSON file whose @PRODUCT@ @EXE@ @FOLDER@ @UPGRADE_CODE@ @VENDOR_DIR@ are filled in
 #>
-Set-StrictMode -Version Latest
+# (No Set-StrictMode here: dot-sourcing would switch it on in the script that loads this file.)
 $script:BrandDir = $PSScriptRoot
 
 function Get-BrandIds {
+  Set-StrictMode -Version Latest
   @(Get-ChildItem -LiteralPath $script:BrandDir -Filter '*.env' | ForEach-Object { $_.BaseName } | Sort-Object)
 }
 
 function Get-Brand {
   param([string] $Id)
+  Set-StrictMode -Version Latest
   if (-not $Id) { $Id = $env:NTM_BRAND }
   if (-not $Id) { $Id = 'ntm' }
   $Id = $Id.Trim().ToLowerInvariant()
@@ -44,6 +46,7 @@ function Get-Brand {
 # The sources and the files shipped with the apps (NOTICE, README) spell the default brand's names.
 function ConvertTo-Brand {
   param([Parameter(Mandatory = $true)] [AllowEmptyString()] [string] $Text, [Parameter(Mandatory = $true)] $Brand)
+  Set-StrictMode -Version Latest
   $ntm = Get-Brand 'ntm'
   # Longest names first: the product names contain the company's.
   foreach ($key in 'EDITOR_PRODUCT', 'PHOTO_PRODUCT', 'COMPANY', 'VENDOR_DIR', 'SLUG') {
@@ -55,6 +58,7 @@ function ConvertTo-Brand {
 # The `wix build` arguments that name one app of a brand: the .wxs files take them as $(var.<Name>).
 function Get-WixDefines {
   param([Parameter(Mandatory = $true)] $Brand, [Parameter(Mandatory = $true)] [ValidateSet('EDITOR', 'PHOTO')] [string] $App)
+  Set-StrictMode -Version Latest
   $exe = $Brand["${App}_EXE"]
   @(
     '-d', "ProductName=$($Brand["${App}_PRODUCT"])",
@@ -71,6 +75,7 @@ function Get-WixDefines {
 # install-policy.json and friends: the file with the brand's values put in for its @TOKENS@, as an object.
 function Read-BrandedJson {
   param([Parameter(Mandatory = $true)] [string] $Path, [Parameter(Mandatory = $true)] $Brand, [Parameter(Mandatory = $true)] [ValidateSet('EDITOR', 'PHOTO')] [string] $App)
+  Set-StrictMode -Version Latest
   $text = Get-Content -Raw -LiteralPath $Path -Encoding utf8
   $values = [ordered]@{
     '@PRODUCT@'      = $Brand["${App}_PRODUCT"]

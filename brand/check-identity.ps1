@@ -94,11 +94,12 @@ try {
     $out
   }
 
-  # The short half of a file name is generated: only the long name is the file's name.
+  # The short half of a file, folder or shortcut name is generated: only the long name is its name.
   function Format-Row([string] $Table, [string] $Row) {
-    if ($Table -ne 'File') { return $Row }
+    if ($Table -notin 'File', 'Directory', 'Shortcut') { return $Row }
     $parts = $Row -split ' \| '
-    "$($parts[0]) | $($parts[1]) | $((($parts[2]) -split '\|')[-1])"
+    $parts[2] = ($parts[2] -split '\|')[-1]
+    $parts -join ' | '
   }
 
   $before = Get-Identity $old[0].FullName
