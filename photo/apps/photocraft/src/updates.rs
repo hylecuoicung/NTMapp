@@ -38,7 +38,7 @@ pub fn last_update() -> Option<Result<String, String>> {
 }
 
 fn check() -> CheckResult {
-    let http = craft_update::Http::new("NTMDigitalPhoto/Update")?;
+    let http = craft_update::Http::new(&format!("{}/Update", ntm_brand::photo::FOLDER))?;
     let found = photocraft_ui_egui::release_feed::check_for_update(&http, photocraft_engine::build_info::VERSION)?;
     let portable = crate::app_dirs::current().mode == crate::app_dirs::Mode::Portable;
     Ok(found.map(|release| Release {

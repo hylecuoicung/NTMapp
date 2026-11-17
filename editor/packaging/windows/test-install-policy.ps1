@@ -4,12 +4,16 @@
 #>
 param(
   [Parameter(Mandatory = $true)] [string] $OutputDirectory,
-  [ValidateSet('x64','x86','arm64')] [string[]] $Architectures = @('x64','x86','arm64')
+  [ValidateSet('x64','x86','arm64')] [string[]] $Architectures = @('x64','x86','arm64'),
+  [string] $Brand = $env:NTM_BRAND
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$policy = Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot 'install-policy.json') | ConvertFrom-Json
+. (Join-Path $PSScriptRoot '..\..\..\brand\brand.ps1')
+$brand = Get-Brand $Brand
+$policy = Read-BrandedJson (Join-Path $PSScriptRoot 'install-policy.json') $brand 'EDITOR'
+$defines = Get-WixDefines $brand 'EDITOR'
 [void](New-Item -ItemType Directory -Force -Path $OutputDirectory)
 $output = (Resolve-Path -LiteralPath $OutputDirectory).Path
 Add-Type -AssemblyName System.Drawing
@@ -38,7 +42,7 @@ foreach ($arch in $Architectures) {
   $sources = @($policy.sources | ForEach-Object { Join-Path $PSScriptRoot $_ })
   $msi = Join-Path $stage "$($policy.id)-NOT-INSTALLABLE.msi"
   $extensions = @($policy.extensions | ForEach-Object { '-ext'; "WixToolset.$_.wixext" })
-  & wix build @sources -arch $arch @extensions `
+  & wix build @sources -arch $arch @extensions @defines `
     -culture en-US -d 'Version=0.0.1' -d 'DisplayVersion=0.0.1-metadata-test' `
     -d "BinDir=$stage" -d "IconPath=$(Join-Path $root $policy.icon)" `
     -d "DocsDir=$(Join-Path $stage 'docs')" -d "ModelsDir=$(Join-Path $stage 'models')" `
@@ -48,7 +52,7 @@ foreach ($arch in $Architectures) {
     -d "LicenseRtf=$(Join-Path $stage 'licence.rtf')" -o $msi @($policy.localization | ForEach-Object { '-loc'; Join-Path $PSScriptRoot $_ })
   if ($LASTEXITCODE -ne 0) { throw "WiX validation failed for $arch (exit $LASTEXITCODE)." }
   $shell = (Get-Process -Id $PID).Path
-  & $shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'check-install-policy.ps1') -MsiPath $msi
+  & $shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'check-install-policy.ps1') -MsiPath $msi -Brand ($brand['ID'])
   if ($LASTEXITCODE -ne 0) { throw "Compiled installer policy failed for $arch (exit $LASTEXITCODE)." }
   Write-Output "PASS $arch metadata-only package. This is not an executable installer."
 }

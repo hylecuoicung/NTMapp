@@ -1,19 +1,40 @@
 //! Community and project links (Help menu, About dialog, header Discord button, Home screen).
 //!
-//! The link of this build: its community Discord.
+//! The community links of this build are its brand's (`brand/*.env`): NTM Digital has its Discord,
+//! Pixel Digital its website and Facebook page. A link the brand does not have is not shown anywhere.
+
+use std::sync::OnceLock;
+
+use crate::menus::UiCommand;
 
 /// The app's short name, used in the website and repository URLs.
 pub const APP: &str = "filmcraft";
 
-/// The community Discord.
-pub const DISCORD: &str = "https://discord.com/channels/1004088367216070770/1004088367824248976";
+/// The community Discord (empty when the brand has none).
+pub const DISCORD: &str = ntm_brand::DISCORD.url;
 /// FilmCraft's source repository.
 pub const GITHUB: &str = "https://github.com/storytold/filmcraft";
 /// New issue on FilmCraft's repository.
 pub const ISSUES: &str = "https://github.com/storytold/filmcraft/issues";
 
-/// (command id, label, url) for every link, in menu order.
-pub const ALL: [(&str, &str, &str); 1] = [("help.discord", "Join the NTM Discord…", DISCORD)];
+/// (command id, label, url) for every community link the brand has, in menu order: Discord,
+/// website, Facebook.
+pub fn all() -> &'static [(&'static str, &'static str, &'static str)] {
+    static ALL: OnceLock<Vec<(&str, &str, &str)>> = OnceLock::new();
+    ALL.get_or_init(|| {
+        [("help.discord", ntm_brand::DISCORD), ("help.website", ntm_brand::WEBSITE), ("help.facebook", ntm_brand::FACEBOOK)]
+            .into_iter()
+            .filter(|(_, link)| link.is_set())
+            .map(|(id, link)| (id, link.label, link.url))
+            .collect()
+    })
+}
+
+/// The links as Help-menu commands.
+pub fn commands() -> &'static [UiCommand] {
+    static COMMANDS: OnceLock<Vec<UiCommand>> = OnceLock::new();
+    COMMANDS.get_or_init(|| all().iter().map(|(id, label, _)| UiCommand { id, label, menu: &["Help"], shortcut: None }).collect())
+}
 
 /// A link the web browser couldn't open (`ui.failedLink`): the address and the reason.
 #[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -24,7 +45,7 @@ pub struct FailedLink {
 
 /// The URL a `help.*` link command opens.
 pub fn url_for(command: &str) -> Option<&'static str> {
-    ALL.iter().find(|(id, _, _)| *id == command).map(|(_, _, u)| *u)
+    all().iter().find(|(id, _, _)| *id == command).map(|(_, _, u)| *u)
 }
 
 /// What a Help menu item does, shown when the pointer rests on it: just the address a link opens
@@ -116,9 +137,12 @@ mod tests {
 
     #[test]
     fn links_are_help_commands_with_web_addresses() {
-        assert!(ALL.iter().all(|(id, _, u)| id.starts_with("help.") && (u.starts_with("https://") || u.starts_with("http://"))));
-        assert_eq!(url_for("help.discord"), Some(DISCORD));
+        assert!(!all().is_empty(), "every brand has a community link");
+        assert!(all().iter().all(|(id, _, u)| id.starts_with("help.") && (u.starts_with("https://") || u.starts_with("http://"))));
+        assert_eq!(url_for("help.discord"), ntm_brand::DISCORD.is_set().then_some(DISCORD));
         assert_eq!(url_for("help.nope"), None);
+        // the Help menu lists exactly the links the brand has
+        assert_eq!(commands().iter().map(|c| c.id).collect::<Vec<_>>(), all().iter().map(|l| l.0).collect::<Vec<_>>());
     }
 
     #[test]
@@ -135,14 +159,14 @@ mod tests {
             Ok(())
         }));
         let ctx = egui::Context::default();
-        for (id, _, url) in ALL {
+        for (id, _, url) in all() {
             let r = crate::menus::invoke(&mut app, &ctx, id, serde_json::json!({})).unwrap();
-            assert_eq!(r["url"], url, "{id}");
-            assert_eq!(opened.borrow().last().map(String::as_str), Some(url), "{id}");
+            assert_eq!(r["url"], *url, "{id}");
+            assert_eq!(opened.borrow().last().map(String::as_str), Some(*url), "{id}");
         }
-        open(&mut app, &ctx, DISCORD);
-        assert_eq!(opened.borrow().last().map(String::as_str), Some(DISCORD));
-        assert_eq!(opened.borrow().len(), ALL.len() + 1);
+        open(&mut app, &ctx, GITHUB);
+        assert_eq!(opened.borrow().last().map(String::as_str), Some(GITHUB));
+        assert_eq!(opened.borrow().len(), all().len() + 1);
 
         // A failing opener falls back to `ctx.open_url` instead of losing the click.
         app.hooks.open_url = Some(Box::new(|_: &str| Err("no browser".into())));
@@ -202,8 +226,8 @@ mod tests {
     #[test]
     fn help_menu_items_say_where_they_go() {
         // links show just their address; the other Help items say what they do instead
-        for (id, _, url) in ALL {
-            assert_eq!(menu_hint(id).as_deref(), Some(url), "{id}");
+        for (id, _, url) in all() {
+            assert_eq!(menu_hint(id).as_deref(), Some(*url), "{id}");
         }
         assert_eq!(menu_hint("help.filmcraftHelp").as_deref(), Some(crate::panels::keyboard::HELP_URL));
         let help_items: Vec<String> = crate::menus::menu_items(&crate::FilmcraftApp::new(filmcraft_engine::Session::default()))
@@ -211,7 +235,7 @@ mod tests {
             .filter(|it| it.path.first().map(String::as_str) == Some("Help"))
             .map(|it| it.id)
             .collect();
-        assert!(help_items.len() >= ALL.len() + 3, "{help_items:?}");
+        assert!(help_items.len() >= all().len() + 3, "{help_items:?}");
         for id in &help_items {
             let hint = menu_hint(id).unwrap_or_else(|| panic!("{id} has no hover hint"));
             let link = url_for(id).is_some() || id == "help.filmcraftHelp";

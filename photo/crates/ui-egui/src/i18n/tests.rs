@@ -523,3 +523,16 @@ fn raw_develop_labels_are_translated_in_every_shipped_catalog() {
         }
     }
 }
+
+/// Text that names the product shows this build's brand, in English and in any language; every
+/// other string is as it was. For the default brand nothing changes at all.
+#[test]
+fn product_names_follow_the_brand() {
+    let Some(en) = Lang::from_code("en") else { return };
+    for text in ["About NTM Digital Photo", "NTM Digital Photo could not start", "NTM Digital Photo — a native image editor."] {
+        assert_eq!(tr(en, text), ntm_brand::rebrand(text), "{text}");
+        assert!(tr(en, text).contains(ntm_brand::photo::PRODUCT), "{text} -> {}", tr(en, text));
+    }
+    assert_eq!(tr(en, "Image Size…"), "Image Size…");
+    assert_eq!(tr_ctx(en, "menu", "About NTM Digital Photo"), ntm_brand::rebrand("About NTM Digital Photo"));
+}

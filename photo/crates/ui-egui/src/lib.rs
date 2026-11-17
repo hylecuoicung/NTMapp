@@ -13,12 +13,13 @@
 /// prompt shows both. Releases are looked up in this fork's repository, which holds more than one
 /// app (see `release_feed`), and `id` is the stem
 /// of their file names (`ntmdigital-photo-<version>-windows-x64.msi`, see `packaging/windows`).
+/// The names are the brand's (`brand/`): this is NTM Digital Photo or Pixel Digital Photo.
 #[cfg(not(target_arch = "wasm32"))]
 pub const UPDATE_APP: craft_update::app::App = craft_update::app::App {
-    id: "ntmdigital-photo",
-    name: "NTM Digital Photo",
-    repo: "hylecuoicung/NTMapp",
-    developer: "NTM Digital",
+    id: ntm_brand::photo::EXE,
+    name: ntm_brand::photo::PRODUCT,
+    repo: ntm_brand::REPO,
+    developer: ntm_brand::COMPANY,
     icon_png: Some(include_bytes!("../../../assets/app-icon/hicolor/128x128/apps/ai.storyteller.photocraft.png")),
     accent: Some([0x2f, 0x7b, 0xf5]),
     ..craft_update::suite::PHOTOCRAFT

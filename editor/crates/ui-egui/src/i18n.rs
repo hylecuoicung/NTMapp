@@ -258,9 +258,10 @@ impl Language {
         }
     }
 
-    /// Translate an English UI string; unknown strings come back unchanged.
+    /// Translate an English UI string; unknown strings come back unchanged. Text that names the
+    /// product ("About NTM Digital Editor", in the catalogs too) shows this build's brand.
     pub fn tr(self, text: &str) -> &str {
-        self.catalog().and_then(|c| c.plain(text)).unwrap_or(text)
+        branded(self.catalog().and_then(|c| c.plain(text)).unwrap_or(text))
     }
 
     /// Does this language's catalog translate `text`? (English never does: it is the source.)
@@ -304,6 +305,24 @@ impl Language {
             text.to_lowercase()
         }
     }
+}
+
+/// `text` as this build's brand shows it: the sources and the catalogs spell the default brand's
+/// product names, so under another brand a string naming the product is swapped for its own
+/// ([`ntm_brand::rebrand`]). Each distinct string is rebranded once and kept for the life of the
+/// process (a few dozen at most), so the result borrows for as long as `text` does.
+fn branded(text: &str) -> &str {
+    if ntm_brand::IS_DEFAULT || !(text.contains(ntm_brand::source::EDITOR_PRODUCT) || text.contains(ntm_brand::source::PHOTO_PRODUCT)) {
+        return text;
+    }
+    static SEEN: OnceLock<std::sync::Mutex<std::collections::HashMap<String, &'static str>>> = OnceLock::new();
+    let mut seen = SEEN.get_or_init(Default::default).lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    if let Some(done) = seen.get(text) {
+        return done;
+    }
+    let done: &'static str = Box::leak(ntm_brand::rebrand(text).into_owned().into_boxed_str());
+    seen.insert(text.to_string(), done);
+    done
 }
 
 thread_local! {

@@ -179,7 +179,7 @@ pub fn command_candidates() -> Vec<Candidate> {
     let engine = crate::command_specs().iter().map(|c| (c.id, c.label, c.menu, c.shortcut));
     engine
         .chain(crate::shell_commands::SHELL_COMMANDS.iter().copied())
-        .filter(|c| !c.2.is_empty())
+        .filter(|c| !c.2.is_empty() && !c.1.is_empty())
         .map(|(id, label, _, default)| Candidate { id: id.to_string(), label: label.to_string(), default: default.map(str::to_string) })
         .collect()
 }

@@ -3,17 +3,19 @@
   <?ifndef HasCraftFontLicences ?>
   <?define HasCraftFontLicences=0 ?>
   <?endif?>
-  <!-- UpgradeCode, the PhotocraftApp component GUID, the ProgIds and the registry keys are NTM Digital
-       Photo's own, not upstream PhotoCraft's: sharing them would make the two installers replace, or
-       count references on, each other's files and registrations. Never change the UpgradeCode again:
-       an installer with a different one no longer updates the installed copy.
+  <!-- Everything that names the product comes from the brand (brand/*.env, passed in by package.ps1 as
+       -d defines): product, manufacturer, UpgradeCode, the PhotocraftApp component GUID, the ProgIds,
+       install folders, registry keys and exe names. They are the brand's own, not upstream PhotoCraft's
+       or another brand's: sharing them would make two installers replace, or count references on, each
+       other's files and registrations. Never change an UpgradeCode: an installer with a different one no
+       longer updates the installed copy.
        The component GUID follows its key file: change it if the exe's name changes. -->
-  <Package Name="NTM Digital Photo" Manufacturer="NTM Digital" Version="$(var.Version)" UpgradeCode="5C704DD5-97D3-444B-8773-212A037E822B" Scope="perUserOrMachine" Compressed="yes" Language="1033">
-    <SummaryInformation Description="NTM Digital Photo image editor" Manufacturer="NTM Digital" />
+  <Package Name="$(var.ProductName)" Manufacturer="$(var.Manufacturer)" Version="$(var.Version)" UpgradeCode="$(var.UpgradeCode)" Scope="perUserOrMachine" Compressed="yes" Language="1033">
+    <SummaryInformation Description="$(var.ProductName) image editor" Manufacturer="$(var.Manufacturer)" />
     <?include $(sys.SOURCEFILEDIR)install-policy.wxi?>
     <!-- Same-version upgrades let successive pre-releases of one X.Y.Z replace each other
          (MSI versions are numeric, so 1.2.3-rc.1 and 1.2.3-rc.2 are both 1.2.3). -->
-    <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version of NTM Digital Photo is already installed." />
+    <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version of $(var.ProductName) is already installed." />
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
     <!-- MSI caches this icon using its Id as the filename. Advertised shortcuts to an
@@ -24,15 +26,15 @@
     <Property Id="ARPURLUPDATEINFO" Value="https://github.com/hylecuoicung/NTMapp/releases" />
 
     <StandardDirectory Id="ProgramFiles6432Folder">
-      <Directory Id="CraftSuiteFolder" Name="NTMDigital">
-        <Directory Id="INSTALLFOLDER" Name="NTMDigitalPhoto" />
+      <Directory Id="CraftSuiteFolder" Name="$(var.SuiteFolder)">
+        <Directory Id="INSTALLFOLDER" Name="$(var.AppFolder)" />
       </Directory>
     </StandardDirectory>
     <StandardDirectory Id="ProgramMenuFolder" />
 
     <!-- An upgrade installs where the user put the previous version (written by PhotocraftApp). -->
 
-    <Feature Id="Main" Title="NTM Digital Photo" Level="1">
+    <Feature Id="Main" Title="$(var.ProductName)" Level="1">
       <?if $(var.HasCraftFontLicences) = 1 ?>
       <ComponentGroupRef Id="CraftFontLicences" />
       <?endif?>
@@ -56,8 +58,8 @@
     <Property Id="PhotocraftVersion" Value="$(var.DisplayVersion)" />
 
     <!-- Finish page: say where to find the app, and offer to start it (ticked by default). -->
-    <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="NTM Digital Photo $(var.DisplayVersion) is installed. You can start it any time from the Start menu." />
-    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch NTM Digital Photo" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="$(var.ProductName) $(var.DisplayVersion) is installed. You can start it any time from the Start menu." />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch $(var.ProductName)" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
     <Property Id="WixShellExecTarget" Value="[#PhotocraftExe]" />
     <!-- Runs in the wizard's own (unelevated) process, so the app starts as the user, not as admin. -->
@@ -71,73 +73,73 @@
     </ComponentGroup>
     <?endif?>
     <ComponentGroup Id="PhotocraftFiles" Directory="INSTALLFOLDER">
-      <Component Id="PhotocraftApp" Guid="6344F377-2A6C-4596-B8CA-805F4D6EA367">
-        <File Id="PhotocraftExe" Source="$(var.BinDir)\ntmdigital-photo.exe" KeyPath="yes">
-          <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="NTM Digital Photo" Description="NTM Digital Photo image editor" WorkingDirectory="INSTALLFOLDER" Advertise="yes" Icon="PhotocraftIcon.exe" IconIndex="0" />
+      <Component Id="PhotocraftApp" Guid="$(var.ComponentGuid)">
+        <File Id="PhotocraftExe" Source="$(var.BinDir)\$(var.ExeName)" KeyPath="yes">
+          <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="$(var.ProductName)" Description="$(var.ProductName) image editor" WorkingDirectory="INSTALLFOLDER" Advertise="yes" Icon="PhotocraftIcon.exe" IconIndex="0" />
         </File>
 
         <!-- .pcraft: the app's own format (PhotoCraft's); this app is its default app. -->
-        <ProgId Id="NTMDigitalPhoto.Document" Description="NTM Digital Photo Document" Icon="PhotocraftExe" IconIndex="0">
+        <ProgId Id="$(var.AppFolder).Document" Description="$(var.ProductName) Document" Icon="PhotocraftExe" IconIndex="0">
           <Extension Id="pcraft" ContentType="application/x-photocraft">
             <Verb Id="open" Command="Open" TargetFile="PhotocraftExe" Argument="&quot;%1&quot;" />
           </Extension>
         </ProgId>
         <!-- PSD/PSB and images: offered under "Open with", never forced as the default. -->
-        <ProgId Id="NTMDigitalPhoto.PhotoshopDocument" Description="PSD Document" Icon="PhotocraftExe" IconIndex="0" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\NTMDigitalPhoto.PhotoshopDocument\shell\open\command" Value="&quot;[#PhotocraftExe]&quot; &quot;%1&quot;" Type="string" />
-        <ProgId Id="NTMDigitalPhoto.Image" Description="Image" Icon="PhotocraftExe" IconIndex="0" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\NTMDigitalPhoto.Image\shell\open\command" Value="&quot;[#PhotocraftExe]&quot; &quot;%1&quot;" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.psd\OpenWithProgids" Name="NTMDigitalPhoto.PhotoshopDocument" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.psb\OpenWithProgids" Name="NTMDigitalPhoto.PhotoshopDocument" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.pdn\OpenWithProgids" Name="NTMDigitalPhoto.Image" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.ora\OpenWithProgids" Name="NTMDigitalPhoto.Image" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.kra\OpenWithProgids" Name="NTMDigitalPhoto.Image" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.krz\OpenWithProgids" Name="NTMDigitalPhoto.Image" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.png\OpenWithProgids" Name="NTMDigitalPhoto.Image" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.jpg\OpenWithProgids" Name="NTMDigitalPhoto.Image" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.jpeg\OpenWithProgids" Name="NTMDigitalPhoto.Image" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.tif\OpenWithProgids" Name="NTMDigitalPhoto.Image" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.tiff\OpenWithProgids" Name="NTMDigitalPhoto.Image" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.webp\OpenWithProgids" Name="NTMDigitalPhoto.Image" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.gif\OpenWithProgids" Name="NTMDigitalPhoto.Image" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.bmp\OpenWithProgids" Name="NTMDigitalPhoto.Image" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.tga\OpenWithProgids" Name="NTMDigitalPhoto.Image" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.exr\OpenWithProgids" Name="NTMDigitalPhoto.Image" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.hdr\OpenWithProgids" Name="NTMDigitalPhoto.Image" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.avif\OpenWithProgids" Name="NTMDigitalPhoto.Image" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.qoi\OpenWithProgids" Name="NTMDigitalPhoto.Image" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\.ico\OpenWithProgids" Name="NTMDigitalPhoto.Image" Value="" Type="string" />
+        <ProgId Id="$(var.AppFolder).PhotoshopDocument" Description="PSD Document" Icon="PhotocraftExe" IconIndex="0" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\$(var.AppFolder).PhotoshopDocument\shell\open\command" Value="&quot;[#PhotocraftExe]&quot; &quot;%1&quot;" Type="string" />
+        <ProgId Id="$(var.AppFolder).Image" Description="Image" Icon="PhotocraftExe" IconIndex="0" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\$(var.AppFolder).Image\shell\open\command" Value="&quot;[#PhotocraftExe]&quot; &quot;%1&quot;" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.psd\OpenWithProgids" Name="$(var.AppFolder).PhotoshopDocument" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.psb\OpenWithProgids" Name="$(var.AppFolder).PhotoshopDocument" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.pdn\OpenWithProgids" Name="$(var.AppFolder).Image" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.ora\OpenWithProgids" Name="$(var.AppFolder).Image" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.kra\OpenWithProgids" Name="$(var.AppFolder).Image" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.krz\OpenWithProgids" Name="$(var.AppFolder).Image" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.png\OpenWithProgids" Name="$(var.AppFolder).Image" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.jpg\OpenWithProgids" Name="$(var.AppFolder).Image" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.jpeg\OpenWithProgids" Name="$(var.AppFolder).Image" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.tif\OpenWithProgids" Name="$(var.AppFolder).Image" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.tiff\OpenWithProgids" Name="$(var.AppFolder).Image" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.webp\OpenWithProgids" Name="$(var.AppFolder).Image" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.gif\OpenWithProgids" Name="$(var.AppFolder).Image" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.bmp\OpenWithProgids" Name="$(var.AppFolder).Image" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.tga\OpenWithProgids" Name="$(var.AppFolder).Image" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.exr\OpenWithProgids" Name="$(var.AppFolder).Image" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.hdr\OpenWithProgids" Name="$(var.AppFolder).Image" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.avif\OpenWithProgids" Name="$(var.AppFolder).Image" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.qoi\OpenWithProgids" Name="$(var.AppFolder).Image" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\.ico\OpenWithProgids" Name="$(var.AppFolder).Image" Value="" Type="string" />
 
-        <!-- "Open with" app list and the Run dialog (Win+R "ntmdigital-photo"). -->
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe" Name="FriendlyAppName" Value="NTM Digital Photo" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\shell\open\command" Value="&quot;[#PhotocraftExe]&quot; &quot;%1&quot;" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".pcraft" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".psd" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".psb" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".pdn" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".ora" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".kra" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".krz" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".png" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".jpg" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".jpeg" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".tif" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".tiff" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".webp" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".gif" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".bmp" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".tga" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".exr" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".hdr" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".avif" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".qoi" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\ntmdigital-photo.exe\SupportedTypes" Name=".ico" Value="" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\ntmdigital-photo.exe" Value="[#PhotocraftExe]" Type="string" />
-        <RegistryValue Root="HKMU" Key="Software\NTMDigitalPhoto" Name="InstallDir" Value="[INSTALLFOLDER]" Type="string" />
+        <!-- "Open with" app list and the Run dialog (Win+R and the exe's name). -->
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)" Name="FriendlyAppName" Value="$(var.ProductName)" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\shell\open\command" Value="&quot;[#PhotocraftExe]&quot; &quot;%1&quot;" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".pcraft" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".psd" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".psb" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".pdn" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".ora" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".kra" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".krz" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".png" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".jpg" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".jpeg" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".tif" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".tiff" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".webp" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".gif" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".bmp" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".tga" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".exr" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".hdr" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".avif" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".qoi" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Classes\Applications\$(var.ExeName)\SupportedTypes" Name=".ico" Value="" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\$(var.ExeName)" Value="[#PhotocraftExe]" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\$(var.AppFolder)" Name="InstallDir" Value="[INSTALLFOLDER]" Type="string" />
       </Component>
 
       <Component Id="PhotocraftCli">
-        <File Id="PhotocraftCliExe" Source="$(var.BinDir)\ntmdigital-photo-cli.exe" KeyPath="yes" />
+        <File Id="PhotocraftCliExe" Source="$(var.BinDir)\$(var.CliExeName)" KeyPath="yes" />
       </Component>
     </ComponentGroup>
   </Fragment>

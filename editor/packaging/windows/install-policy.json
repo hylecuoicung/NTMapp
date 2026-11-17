@@ -1,7 +1,8 @@
 {
   "id": "filmcraft",
-  "name": "NTMDigitalEditor",
-  "upgradeCode": "BB5F6996-DF46-4CB3-9742-12A7CE95C4F6",
+  "name": "@FOLDER@",
+  "vendorDir": "@VENDOR_DIR@",
+  "upgradeCode": "@UPGRADE_CODE@",
   "sources": [
     "filmcraft.wxs"
   ],
@@ -13,13 +14,13 @@
   ],
   "payloads": [
     "NOTICE",
-    "ntmdigital-editor-cli.exe",
-    "ntmdigital-editor.exe"
+    "@EXE@-cli.exe",
+    "@EXE@.exe"
   ],
   "registry": [
     [
       "-1",
-      "Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\ntmdigital-editor.exe",
+      "Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\@EXE@.exe",
       "",
       "[#FilmcraftExe]"
     ]

@@ -1,10 +1,10 @@
-//! This build's logo for the About dialog and Home: the NTM Digital Editor mark (the app icon's
-//! artwork, `assets/app-icon/`) followed by the name as text.
+//! This build's logo for the About dialog and Home: the mark (the app icon's artwork,
+//! `assets/app-icon/`, the same for every brand) followed by the brand's product name as text.
 
 use egui::emath::GuiRounding as _;
 
 /// The name the wordmark spells.
-pub const WORDMARK: &str = "NTM Digital Editor";
+pub const WORDMARK: &str = ntm_brand::editor::PRODUCT;
 
 /// The mark as `packaging/icons.sh` renders it from the vector, smallest first: (side in pixels, PNG).
 const MARKS: &[(u32, &[u8])] = &[

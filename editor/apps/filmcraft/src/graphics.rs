@@ -156,7 +156,7 @@ fn failure_message_for(error: &str, failed: &[(Mode, String)], log: Option<&Path
             None => text.to_string(),
         }
     };
-    let mut msg = format!("NTM Digital Editor could not start its window: {}\n", shorten(error));
+    let mut msg = format!("{} could not start its window: {}\n", ntm_brand::editor::PRODUCT, shorten(error));
     if !failed.is_empty() {
         msg.push_str("\nGraphics modes tried:\n");
         for (mode, err) in failed {
@@ -166,9 +166,9 @@ fn failure_message_for(error: &str, failed: &[(Mode, String)], log: Option<&Path
     msg.push_str("\nUpdating the graphics driver usually fixes this.");
     if ladder.len() > 1 {
         let names: Vec<String> = ladder.iter().map(|m| format!("--graphics {}", m.name())).collect();
-        msg.push_str(&format!(" To choose a graphics mode yourself, start NTM Digital Editor with {}.", names.join(", ")));
+        msg.push_str(&format!(" To choose a graphics mode yourself, start {} with {}.", ntm_brand::editor::PRODUCT, names.join(", ")));
     }
-    msg.push_str(&format!("\n\nNTM Digital Editor {} ({} {})", env!("CARGO_PKG_VERSION"), std::env::consts::OS, std::env::consts::ARCH));
+    msg.push_str(&format!("\n\n{} {} ({} {})", ntm_brand::editor::PRODUCT, env!("CARGO_PKG_VERSION"), std::env::consts::OS, std::env::consts::ARCH));
     if let Some(log) = log {
         msg.push_str(&format!("\nDetails are in {}", log.display()));
     }

@@ -1,11 +1,13 @@
 <#
 .SYNOPSIS
-  Build, sign and package NTM Digital Editor for Windows.
+  Build, sign and package the editor for Windows, under the brand NTM_BRAND names (ntm, the default,
+  or pixel: brand/*.env).
 
 .DESCRIPTION
-  Produces, in $env:DIST (default: dist/release):
+  Produces, in $env:DIST (default: dist/release), for the NTM Digital brand:
     ntmdigital-editor-<version>-windows-<arch>.msi            per-machine installer (WiX v5)
     ntmdigital-editor-<version>-windows-<arch>-portable.zip   ntmdigital-editor.exe + ntmdigital-editor-cli.exe + portable.txt
+  (pixeldigital-editor-... for Pixel Digital.)
 
   The binaries link the C runtime statically (+crt-static), so neither the MSI nor the portable
   zip needs the Visual C++ redistributable. Signing is delegated to sign.ps1 (skipped with a
@@ -25,6 +27,24 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $Root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+
+# The brand: what this build is called and installs as (brand/*.env). The Rust build reads the same
+# NTM_BRAND, so the exe's own names and the installer's agree.
+. (Join-Path $Root '..\brand\brand.ps1')
+$Brand = Get-Brand
+$env:NTM_BRAND = $Brand['ID']
+$Product = $Brand['EDITOR_PRODUCT']
+$Stem = $Brand['EDITOR_EXE']
+$Exe = "$Stem.exe"
+$CliExe = "$Stem-cli.exe"
+
+# NOTICE and README spell the NTM Digital names; another brand's copies carry its own.
+function Copy-Branded([string] $Source, [string] $Destination) {
+  if ($Brand['ID'] -eq 'ntm') { Copy-Item -LiteralPath $Source -Destination $Destination; return }
+  if ((Test-Path -LiteralPath $Destination -PathType Container)) { $Destination = Join-Path $Destination (Split-Path -Leaf $Source) }
+  $text = ConvertTo-Brand (Get-Content -Raw -Encoding utf8 -LiteralPath $Source) $Brand
+  [IO.File]::WriteAllText($Destination, $text, (New-Object System.Text.UTF8Encoding($false)))
+}
 
 function Invoke-Native([string] $What, [scriptblock] $Block) {
   Write-Output "==> $What"
@@ -53,7 +73,7 @@ New-Item -ItemType Directory -Force -Path $Dist | Out-Null
 if (-not $env:FILMCRAFT_BUILD_SHA) { $env:FILMCRAFT_BUILD_SHA = (git -C $Root rev-parse HEAD 2>$null) }
 if (-not $env:FILMCRAFT_BUILD_DATE) { $env:FILMCRAFT_BUILD_DATE = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd') }
 
-Write-Output "NTM Digital Editor $Version for Windows $Arch ($Target)"
+Write-Output "$Product $Version for Windows $Arch ($Target)"
 
 if (-not $SkipBuild) {
   # Static CRT: no VC++ redistributable needed. Scoped to the target so host build scripts and
@@ -88,12 +108,12 @@ $Stage = Join-Path $TargetDir "windows-package\$Arch"
 Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $Stage | Out-Null
 # Dependency font notices are required even without optional craft-fonts.
-Copy-Item -LiteralPath (Join-Path $Root 'NOTICE') -Destination $Stage
-# Ship under the NTM Digital Editor names (the cargo binaries keep their internal names).
-Copy-Item (Join-Path $Bin 'filmcraft.exe') (Join-Path $Stage 'ntmdigital-editor.exe')
-Copy-Item (Join-Path $Bin 'filmcraft-cli.exe') (Join-Path $Stage 'ntmdigital-editor-cli.exe')
+Copy-Branded (Join-Path $Root 'NOTICE') $Stage
+# Ship under the brand's names (the cargo binaries keep their internal names).
+Copy-Item (Join-Path $Bin 'filmcraft.exe') (Join-Path $Stage $Exe)
+Copy-Item (Join-Path $Bin 'filmcraft-cli.exe') (Join-Path $Stage $CliExe)
 
-& (Join-Path $PSScriptRoot 'sign.ps1') (Join-Path $Stage 'ntmdigital-editor.exe') (Join-Path $Stage 'ntmdigital-editor-cli.exe')
+& (Join-Path $PSScriptRoot 'sign.ps1') (Join-Path $Stage $Exe) (Join-Path $Stage $CliExe)
 
 # ---- font notices for the MSI ------------------------------------------------------------------
 # The portable ZIP already carries these notices; stage the complete files before MSI creation too.
@@ -109,33 +129,34 @@ if ($env:CRAFT_FONTS_DIR) {
 # ---- end font notices for the MSI --------------------------------------------------------------
 
 # ---- MSI ---------------------------------------------------------------------------------------
-$Msi = Join-Path $Dist "ntmdigital-editor-$Version-windows-$Arch.msi"
+$Msi = Join-Path $Dist "$Stem-$Version-windows-$Arch.msi"
+$WixDefines = Get-WixDefines $Brand 'EDITOR'
 Invoke-Native 'WiX extensions' { wix extension add -g WixToolset.UI.wixext/5.0.2 WixToolset.Util.wixext/5.0.2 }
 Invoke-Native 'wix build' {
   wix build (Join-Path $PSScriptRoot 'filmcraft.wxs') -arch $Arch -ext WixToolset.UI.wixext -ext WixToolset.Util.wixext `
-    -d "Version=$MsiVersion" -d "DisplayVersion=$Version" -d "BinDir=$Stage" -d "IconPath=$(Join-Path $Root 'assets\app-icon\filmcraft.ico')" `
+    @WixDefines -d "Version=$MsiVersion" -d "DisplayVersion=$Version" -d "BinDir=$Stage" -d "IconPath=$(Join-Path $Root 'assets\app-icon\filmcraft.ico')" `
     -d "DocsDir=$Docs" -d "HasCraftFontLicences=$HasCraftFontLicences" `
     -o $Msi
 }
 # Check the compiled scope, path and registration contract before signing.
-& (Join-Path $PSScriptRoot 'check-install-policy.ps1') -MsiPath $Msi
+& (Join-Path $PSScriptRoot 'check-install-policy.ps1') -MsiPath $Msi -Brand ($Brand['ID'])
 # wix writes its debug symbols (.wixpdb) next to the MSI; keep them out of the release assets.
 Remove-Item -Force -ErrorAction SilentlyContinue ([IO.Path]::ChangeExtension($Msi, '.wixpdb'))
 & (Join-Path $PSScriptRoot 'sign.ps1') $Msi
 
 # ---- portable zip ------------------------------------------------------------------------------
-$Portable = Join-Path $TargetDir "windows-package\ntmdigital-editor-$Version-windows-$Arch-portable"
+$Portable = Join-Path $TargetDir "windows-package\$Stem-$Version-windows-$Arch-portable"
 Remove-Item -Recurse -Force $Portable -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $Portable | Out-Null
 Copy-Item (Join-Path $Stage '*.exe') $Portable
-# The marker that makes NTM Digital Editor keep its data in .\data next to the exe instead of %APPDATA% (#139).
+# The marker that makes the editor keep its data in .\data next to the exe instead of %APPDATA% (#139).
 Set-Content -Encoding ascii -Path (Join-Path $Portable 'portable.txt') -Value @(
-  'NTM Digital Editor portable: preferences, presets, logs and crash recovery are kept in the data folder',
-  'next to ntmdigital-editor.exe. Delete this file to use %APPDATA%\FilmCraft instead.'
+  "$Product portable: preferences, presets, logs and crash recovery are kept in the data folder",
+  "next to $Exe. Delete this file to use %APPDATA%\FilmCraft instead."
 )
 foreach ($f in 'README.md', 'LICENSE', 'LICENSE-MIT', 'LICENSE-APACHE', 'NOTICE') {
   $p = Join-Path $Root $f
-  if (Test-Path $p) { Copy-Item $p $Portable }
+  if (Test-Path $p) { Copy-Branded $p $Portable }
 }
 # Licences of the embedded craft-fonts fonts (builds with CRAFT_FONTS_DIR) as OFL-<family>.txt.
 if ($env:CRAFT_FONTS_DIR) {
@@ -143,7 +164,7 @@ if ($env:CRAFT_FONTS_DIR) {
     Copy-Item $lic.FullName (Join-Path $Portable "OFL-$($lic.Directory.Name).txt")
   }
 }
-$Zip = Join-Path $Dist "ntmdigital-editor-$Version-windows-$Arch-portable.zip"
+$Zip = Join-Path $Dist "$Stem-$Version-windows-$Arch-portable.zip"
 Remove-Item -Force $Zip -ErrorAction SilentlyContinue
 Compress-Archive -Path $Portable -DestinationPath $Zip
 
@@ -151,7 +172,7 @@ Compress-Archive -Path $Portable -DestinationPath $Zip
 # here; .github/workflows/windows-arm64.yml installs and runs it on ARM64 instead.
 $HostArch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
 if ($Arch -ne 'arm64' -or $HostArch -eq 'arm64') {
-  Invoke-Native 'ntmdigital-editor-cli --version' { & (Join-Path $Stage 'ntmdigital-editor-cli.exe') --version }
+  Invoke-Native "$Stem-cli --version" { & (Join-Path $Stage $CliExe) --version }
 } else {
   Write-Output "skipping filmcraft-cli --version: an $Arch build doesn't run on this $HostArch machine"
 }

@@ -65,6 +65,10 @@ pub fn menu_items(app: &PhotocraftApp) -> Vec<MenuItem> {
     // 2) Our commands that Photoshop's tree doesn't list (or lists under another id).
     let mut extra: Vec<MenuItem> = Vec::new();
     for &(id, label, path, sc) in UI_COMMANDS {
+        // a community link the brand does not have
+        if label.is_empty() {
+            continue;
+        }
         extra.push(MenuItem {
             id: id.into(),
             label: label.into(),

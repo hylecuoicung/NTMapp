@@ -21,11 +21,11 @@ fn main() {
     }
     let mut res = winresource::WindowsResource::new();
     res.set_icon("../../assets/app-icon/photocraft.ico")
-        .set("ProductName", "NTM Digital Photo")
-        .set("FileDescription", "NTM Digital Photo image editor")
-        .set("CompanyName", "NTM Digital")
-        .set("LegalCopyright", "Copyright (c) NTM Digital and the PhotoCraft authors. MIT OR Apache-2.0.")
-        .set("OriginalFilename", "ntmdigital-photo.exe")
+        .set("ProductName", ntm_brand::photo::PRODUCT)
+        .set("FileDescription", &format!("{} image editor", ntm_brand::photo::PRODUCT))
+        .set("CompanyName", ntm_brand::COMPANY)
+        .set("LegalCopyright", &format!("Copyright (c) {} and the PhotoCraft authors. MIT OR Apache-2.0.", ntm_brand::COMPANY))
+        .set("OriginalFilename", &format!("{}.exe", ntm_brand::photo::EXE))
         .set("InternalName", "photocraft");
     if let Err(e) = res.compile() {
         if std::env::var_os("PHOTOCRAFT_REQUIRE_WINRES").is_some() {

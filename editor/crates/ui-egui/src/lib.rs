@@ -10,12 +10,13 @@
 /// prompt shows both. Releases are looked up in this fork's repository, which holds more than one
 /// app (see `release_feed`), and `id` is the stem
 /// of their file names (`ntmdigital-editor-<version>-windows-x64.msi`, see `packaging/windows`).
+/// The names are the brand's (`brand/`): this is NTM Digital Editor or Pixel Digital Editor.
 #[cfg(not(target_arch = "wasm32"))]
 pub const UPDATE_APP: craft_update::app::App = craft_update::app::App {
-    id: "ntmdigital-editor",
-    name: "NTM Digital Editor",
-    repo: "hylecuoicung/NTMapp",
-    developer: "NTM Digital",
+    id: ntm_brand::editor::EXE,
+    name: ntm_brand::editor::PRODUCT,
+    repo: ntm_brand::REPO,
+    developer: ntm_brand::COMPANY,
     icon_png: Some(include_bytes!("../../../assets/app-icon/hicolor/128x128/apps/ai.storyteller.filmcraft.png")),
     accent: Some([0x8b, 0x5c, 0xf6]),
     ..craft_update::suite::FILMCRAFT

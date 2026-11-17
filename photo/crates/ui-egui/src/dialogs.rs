@@ -839,14 +839,19 @@ fn about_tab_body(app: &mut PhotocraftApp, ui: &mut egui::Ui, tab: &str) {
     match tab {
         "models" => crate::credits::models_ui(ui),
         _ => {
-            ui.label("NTM Digital Photo — a native image editor.");
+            ui.label(format!("{} — a native image editor.", ntm_brand::photo::PRODUCT));
             ui.label(crate::i18n::fmt(tl!("Version {version}"), &[("version", &photocraft_engine::build_info::long_version())]));
             ui.add_space(12.0);
             ui.vertical_centered(|ui| {
-                crate::links::discord_button(app, ui, 220.0);
+                for (i, (id, url)) in crate::links::commands().iter().enumerate() {
+                    if i > 0 {
+                        ui.add_space(4.0);
+                    }
+                    crate::links::link_button(app, ui, id, url, 220.0);
+                }
             });
             ui.add_space(10.0);
-            ui.weak("Copyright 2026. NTM Digital. Built on the open-source PhotoCraft (MIT OR Apache-2.0).");
+            ui.weak(format!("Copyright 2026. {}. Built on the open-source PhotoCraft (MIT OR Apache-2.0).", ntm_brand::COMPANY));
         }
     }
 }
@@ -877,7 +882,7 @@ pub fn title(d: &Dialog) -> String {
     match d.kind {
         DialogKind::NewDocument => "New Document".into(),
         DialogKind::About if d.fields.get("systemInfo").and_then(Value::as_bool) == Some(true) => "System Info".into(),
-        DialogKind::About => "About NTM Digital Photo".into(),
+        DialogKind::About => format!("About {}", ntm_brand::photo::PRODUCT),
         DialogKind::LayerStyle => "Layer Style".into(),
         DialogKind::Command => d.fields.get("__label").and_then(Value::as_str).unwrap_or("Command").trim_end_matches('…').to_string(),
         DialogKind::Error => "Error".into(),

@@ -1,7 +1,7 @@
 use super::{PhotocraftApp, Sense, Tokens, icons, theme, vec2, widgets};
 
 /// The product name, as the window title and the title bar show it.
-pub(crate) const APP_TITLE: &str = "NTM Digital Photo";
+pub(crate) const APP_TITLE: &str = ntm_brand::photo::PRODUCT;
 
 // ----------------------------------------------------------------------------- title bar
 

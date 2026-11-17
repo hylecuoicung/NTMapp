@@ -444,9 +444,9 @@ fn about(app: &mut FilmcraftApp, ui: &mut egui::Ui) {
     }
 }
 
-/// About ▸ About: version and the community link, an accented Discord button.
+/// About ▸ About: version and the brand's community links, the first one an accented button.
 ///
-/// Automation id: `about.discord`.
+/// Automation ids: `about.discord` (NTM Digital), `about.website` and `about.facebook` (Pixel Digital).
 fn about_tab(app: &mut FilmcraftApp, ui: &mut egui::Ui) {
     use crate::icons::{self, Icon};
     use crate::links;
@@ -486,7 +486,11 @@ fn about_tab(app: &mut FilmcraftApp, ui: &mut egui::Ui) {
             links::open(app, ui.ctx(), url);
         }
     };
-    link(ui, "discord", Icon::Chat, tl!("Join the NTM Discord"), links::DISCORD, true);
-    ui.add_space(10.0);
-    ui.label(egui::RichText::new(tl!("Copyright 2026. NTM Digital.")).small().color(t.text_dim));
+    for (i, (id, label, url)) in links::all().iter().enumerate() {
+        let icon = if *id == "help.discord" { Icon::Chat } else { Icon::Globe };
+        link(ui, id.trim_start_matches("help."), icon, crate::i18n::t(label.trim_end_matches('…')), url, i == 0);
+        ui.add_space(4.0);
+    }
+    ui.add_space(6.0);
+    ui.label(egui::RichText::new(format!("Copyright 2026. {}.", ntm_brand::COMPANY)).small().color(t.text_dim));
 }

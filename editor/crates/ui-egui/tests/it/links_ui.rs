@@ -81,23 +81,36 @@ impl Driver {
 fn community_links_everywhere() {
     let mut d = Driver::demo();
     // Help menu: every link is a command that reports the URL it opened.
-    for (id, _, url) in links::ALL {
+    for (id, _, url) in links::all() {
         let r = d.ok("engine.execute", json!({"command": id, "params": {}}));
         assert_eq!(r["url"], json!(url), "{id}");
     }
     let menu = d.ok("ui.menu.list", json!({}));
     let text = menu.to_string();
-    for (id, label, _) in links::ALL {
+    for (id, label, _) in links::all() {
         assert!(text.contains(id) && text.contains(label), "Help menu lists {id}");
     }
-    // Header: the Discord button is always there.
-    assert_eq!(d.ids("header.discord"), vec!["header.discord".to_string()]);
+    // A link the brand does not have is not in the Help menu.
+    for id in ["help.discord", "help.website", "help.facebook"] {
+        assert_eq!(text.contains(id), links::url_for(id).is_some(), "{id}");
+    }
+    // Header: the Discord button is there for a brand with a Discord, and only then.
+    let header = d.ids("header.discord");
+    assert_eq!(header.is_empty(), !ntm_brand::DISCORD.is_set(), "{header:?}");
     d.snapshot("header");
-    // About dialog: the Discord button.
+    // About dialog: one button for each link of the brand.
     d.ok("engine.execute", json!({"command": "app.about", "params": {}}));
     d.frames(3);
     let about = d.ids("about.");
-    assert!(about.iter().any(|a| a == "about.discord"), "about.discord in {about:?}");
+    for (id, _, _) in links::all() {
+        let want = format!("about.{}", id.trim_start_matches("help."));
+        assert!(about.iter().any(|a| *a == want), "{want} in {about:?}");
+    }
+    // ... and none for a link the brand does not have
+    for id in ["help.discord", "help.website", "help.facebook"] {
+        let name = format!("about.{}", id.trim_start_matches("help."));
+        assert_eq!(about.iter().any(|a| *a == name), links::url_for(id).is_some(), "{name} in {about:?}");
+    }
     d.snapshot("about");
     d.ok("ui.key", json!({"key": "Escape"}));
     d.frames(3);
@@ -106,6 +119,13 @@ fn community_links_everywhere() {
     d.ok("engine.execute", json!({"command": "mode.import", "params": {}}));
     d.frames(3);
     let home = d.ids("import.link.");
-    assert!(home.iter().any(|a| a == "import.link.discord"), "import.link.discord in {home:?}");
+    for (id, _, _) in links::all() {
+        let want = format!("import.link.{}", id.trim_start_matches("help."));
+        assert!(home.iter().any(|a| *a == want), "{want} in {home:?}");
+    }
+    for id in ["help.discord", "help.website", "help.facebook"] {
+        let name = format!("import.link.{}", id.trim_start_matches("help."));
+        assert_eq!(home.iter().any(|a| *a == name), links::url_for(id).is_some(), "{name} in {home:?}");
+    }
     d.snapshot("home");
 }

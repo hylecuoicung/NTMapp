@@ -1,7 +1,8 @@
 {
   "id": "photocraft",
-  "name": "NTMDigitalPhoto",
-  "upgradeCode": "5C704DD5-97D3-444B-8773-212A037E822B",
+  "name": "@FOLDER@",
+  "vendorDir": "@VENDOR_DIR@",
+  "upgradeCode": "@UPGRADE_CODE@",
   "sources": [
     "photocraft.wxs"
   ],
@@ -14,289 +15,289 @@
     "Util"
   ],
   "payloads": [
-    "ntmdigital-photo-cli.exe",
-    "ntmdigital-photo.exe"
+    "@EXE@-cli.exe",
+    "@EXE@.exe"
   ],
   "registry": [
     [
       "-1",
-      "Software\\Classes\\NTMDigitalPhoto.PhotoshopDocument\\shell\\open\\command",
+      "Software\\Classes\\@FOLDER@.PhotoshopDocument\\shell\\open\\command",
       "",
       "\"[#PhotocraftExe]\" \"%1\""
     ],
     [
       "-1",
-      "Software\\Classes\\NTMDigitalPhoto.Image\\shell\\open\\command",
+      "Software\\Classes\\@FOLDER@.Image\\shell\\open\\command",
       "",
       "\"[#PhotocraftExe]\" \"%1\""
     ],
     [
       "-1",
       "Software\\Classes\\.psd\\OpenWithProgids",
-      "NTMDigitalPhoto.PhotoshopDocument",
+      "@FOLDER@.PhotoshopDocument",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.psb\\OpenWithProgids",
-      "NTMDigitalPhoto.PhotoshopDocument",
+      "@FOLDER@.PhotoshopDocument",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.pdn\\OpenWithProgids",
-      "NTMDigitalPhoto.Image",
+      "@FOLDER@.Image",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.ora\\OpenWithProgids",
-      "NTMDigitalPhoto.Image",
+      "@FOLDER@.Image",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.kra\\OpenWithProgids",
-      "NTMDigitalPhoto.Image",
+      "@FOLDER@.Image",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.krz\\OpenWithProgids",
-      "NTMDigitalPhoto.Image",
+      "@FOLDER@.Image",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.png\\OpenWithProgids",
-      "NTMDigitalPhoto.Image",
+      "@FOLDER@.Image",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.jpg\\OpenWithProgids",
-      "NTMDigitalPhoto.Image",
+      "@FOLDER@.Image",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.jpeg\\OpenWithProgids",
-      "NTMDigitalPhoto.Image",
+      "@FOLDER@.Image",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.tif\\OpenWithProgids",
-      "NTMDigitalPhoto.Image",
+      "@FOLDER@.Image",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.tiff\\OpenWithProgids",
-      "NTMDigitalPhoto.Image",
+      "@FOLDER@.Image",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.webp\\OpenWithProgids",
-      "NTMDigitalPhoto.Image",
+      "@FOLDER@.Image",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.gif\\OpenWithProgids",
-      "NTMDigitalPhoto.Image",
+      "@FOLDER@.Image",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.bmp\\OpenWithProgids",
-      "NTMDigitalPhoto.Image",
+      "@FOLDER@.Image",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.tga\\OpenWithProgids",
-      "NTMDigitalPhoto.Image",
+      "@FOLDER@.Image",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.exr\\OpenWithProgids",
-      "NTMDigitalPhoto.Image",
+      "@FOLDER@.Image",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.hdr\\OpenWithProgids",
-      "NTMDigitalPhoto.Image",
+      "@FOLDER@.Image",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.avif\\OpenWithProgids",
-      "NTMDigitalPhoto.Image",
+      "@FOLDER@.Image",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.qoi\\OpenWithProgids",
-      "NTMDigitalPhoto.Image",
+      "@FOLDER@.Image",
       ""
     ],
     [
       "-1",
       "Software\\Classes\\.ico\\OpenWithProgids",
-      "NTMDigitalPhoto.Image",
+      "@FOLDER@.Image",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe",
+      "Software\\Classes\\Applications\\@EXE@.exe",
       "FriendlyAppName",
-      "NTM Digital Photo"
+      "@PRODUCT@"
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\shell\\open\\command",
+      "Software\\Classes\\Applications\\@EXE@.exe\\shell\\open\\command",
       "",
       "\"[#PhotocraftExe]\" \"%1\""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".pcraft",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".psd",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".psb",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".pdn",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".ora",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".kra",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".krz",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".png",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".jpg",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".jpeg",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".tif",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".tiff",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".webp",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".gif",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".bmp",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".tga",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".exr",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".hdr",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".avif",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".qoi",
       ""
     ],
     [
       "-1",
-      "Software\\Classes\\Applications\\ntmdigital-photo.exe\\SupportedTypes",
+      "Software\\Classes\\Applications\\@EXE@.exe\\SupportedTypes",
       ".ico",
       ""
     ],
     [
       "-1",
-      "Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\ntmdigital-photo.exe",
+      "Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\@EXE@.exe",
       "",
       "[#PhotocraftExe]"
     ],
     [
       "-1",
-      "Software\\NTMDigitalPhoto",
+      "Software\\@FOLDER@",
       "InstallDir",
       "[INSTALLFOLDER]"
     ]

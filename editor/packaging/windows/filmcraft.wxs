@@ -3,16 +3,18 @@
   <?ifndef HasCraftFontLicences ?>
   <?define HasCraftFontLicences=0 ?>
   <?endif?>
-  <!-- UpgradeCode and the FilmcraftApp component GUID are NTM Digital Editor's own, not upstream FilmCraft's:
-       sharing them would make the two installers replace, or count references on, each other's files.
-       Never change the UpgradeCode: an installer with a different one no longer updates the installed copy.
+  <!-- Everything that names the product comes from the brand (brand/*.env, passed in by package.ps1 as
+       -d defines): product, manufacturer, UpgradeCode, the FilmcraftApp component GUID, install folders,
+       registry key and exe names. They are the brand's own, not upstream FilmCraft's or another brand's:
+       sharing them would make two installers replace, or count references on, each other's files.
+       Never change an UpgradeCode: an installer with a different one no longer updates the installed copy.
        The component GUID follows its key file: change it if the exe's name changes. -->
-  <Package Name="NTM Digital Editor" Manufacturer="NTM Digital" Version="$(var.Version)" UpgradeCode="BB5F6996-DF46-4CB3-9742-12A7CE95C4F6" Scope="perUserOrMachine" Compressed="yes" Language="1033">
-    <SummaryInformation Description="NTM Digital Editor, a video editor" Manufacturer="NTM Digital" />
+  <Package Name="$(var.ProductName)" Manufacturer="$(var.Manufacturer)" Version="$(var.Version)" UpgradeCode="$(var.UpgradeCode)" Scope="perUserOrMachine" Compressed="yes" Language="1033">
+    <SummaryInformation Description="$(var.ProductName), a video editor" Manufacturer="$(var.Manufacturer)" />
     <?include $(sys.SOURCEFILEDIR)install-policy.wxi?>
     <!-- Same-version upgrades let successive pre-releases of one X.Y.Z replace each other
          (MSI versions are numeric, so 1.2.3-rc.1 and 1.2.3-rc.2 are both 1.2.3). -->
-    <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version of NTM Digital Editor is already installed." />
+    <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version of $(var.ProductName) is already installed." />
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
     <Icon Id="FilmcraftIcon.ico" SourceFile="$(var.IconPath)" />
@@ -21,13 +23,13 @@
     <Property Id="ARPURLUPDATEINFO" Value="https://github.com/hylecuoicung/NTMapp/releases" />
 
     <StandardDirectory Id="ProgramFiles6432Folder">
-      <Directory Id="CraftSuiteFolder" Name="NTMDigital">
-        <Directory Id="INSTALLFOLDER" Name="NTMDigitalEditor" />
+      <Directory Id="CraftSuiteFolder" Name="$(var.SuiteFolder)">
+        <Directory Id="INSTALLFOLDER" Name="$(var.AppFolder)" />
       </Directory>
     </StandardDirectory>
     <StandardDirectory Id="ProgramMenuFolder" />
 
-    <Feature Id="Main" Title="NTM Digital Editor" Level="1">
+    <Feature Id="Main" Title="$(var.ProductName)" Level="1">
       <?if $(var.HasCraftFontLicences) = 1 ?>
       <ComponentGroupRef Id="CraftFontLicences" />
       <?endif?>
@@ -41,8 +43,8 @@
     </UI>
 
     <!-- Finish page: say where to find the app, and offer to start it (ticked by default). -->
-    <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="NTM Digital Editor $(var.DisplayVersion) is installed. You can start it any time from the Start menu." />
-    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch NTM Digital Editor" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="$(var.ProductName) $(var.DisplayVersion) is installed. You can start it any time from the Start menu." />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch $(var.ProductName)" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
     <Property Id="WixShellExecTarget" Value="[#FilmcraftExe]" />
     <!-- Runs in the wizard's own (unelevated) process, so the app starts as the user, not as admin. -->
@@ -56,18 +58,18 @@
     </ComponentGroup>
     <?endif?>
     <ComponentGroup Id="FilmcraftFiles" Directory="INSTALLFOLDER">
-      <Component Id="FilmcraftApp" Guid="E229F7E2-2C3A-4508-989E-1A1250F3C81D">
+      <Component Id="FilmcraftApp" Guid="$(var.ComponentGuid)">
         <File Id="FilmcraftNotice" Source="$(var.BinDir)\NOTICE" KeyPath="no" />
-        <File Id="FilmcraftExe" Source="$(var.BinDir)\ntmdigital-editor.exe" KeyPath="yes">
-          <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="NTM Digital Editor" Description="NTM Digital Editor, a video editor" WorkingDirectory="INSTALLFOLDER" Advertise="yes" Icon="FilmcraftIcon.ico" IconIndex="0" />
+        <File Id="FilmcraftExe" Source="$(var.BinDir)\$(var.ExeName)" KeyPath="yes">
+          <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="$(var.ProductName)" Description="$(var.ProductName), a video editor" WorkingDirectory="INSTALLFOLDER" Advertise="yes" Icon="FilmcraftIcon.ico" IconIndex="0" />
         </File>
 
-        <RegistryValue Root="HKMU" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\ntmdigital-editor.exe" Value="[#FilmcraftExe]" Type="string" />
-      <RegistryValue Root="HKMU" Key="Software\NTMDigitalEditor" Name="InstallDir" Value="[INSTALLFOLDER]" Type="string" />
+        <RegistryValue Root="HKMU" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\$(var.ExeName)" Value="[#FilmcraftExe]" Type="string" />
+      <RegistryValue Root="HKMU" Key="Software\$(var.AppFolder)" Name="InstallDir" Value="[INSTALLFOLDER]" Type="string" />
       </Component>
 
       <Component Id="FilmcraftCli">
-        <File Id="FilmcraftCliExe" Source="$(var.BinDir)\ntmdigital-editor-cli.exe" KeyPath="yes" />
+        <File Id="FilmcraftCliExe" Source="$(var.BinDir)\$(var.CliExeName)" KeyPath="yes" />
       </Component>
     </ComponentGroup>
   </Fragment>

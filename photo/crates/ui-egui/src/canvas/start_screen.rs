@@ -151,7 +151,14 @@ fn render_start_rail(app: &mut PhotocraftApp, ui: &mut egui::Ui, rail_w: f32) {
 
     ui.add_space(8.0);
 
-    render_rail_link(app, ui, rail_w, tl!("Discord"), "message-square", crate::links::DISCORD);
+    for (id, url) in crate::links::commands() {
+        let (label, icon) = match *id {
+            "help.discord" => (tl!("Discord"), "message-square"),
+            "help.website" => (tl!("Website"), "link"),
+            _ => ("Facebook", "link"),
+        };
+        render_rail_link(app, ui, rail_w, label, icon, url);
+    }
 }
 
 fn render_rail_link(app: &mut PhotocraftApp, ui: &mut egui::Ui, rail_w: f32, label: &str, icon_name: &str, url: &str) {

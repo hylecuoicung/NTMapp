@@ -137,20 +137,25 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, full: Rect) {
     let wresp = ui.interact(wr, egui::Id::unique("hdr-ws-name"), Sense::click());
     app.auto.add("header.workspaceName", wr, &ws);
     p.galley_with_override_text_color(pos2(wr.min.x + 4.0, rect.center().y - wg.size().y / 2.0), wg, if wresp.hovered() { t.text } else { t.text_dim });
-    // Community: a labelled Discord button, always one click away.
-    {
+    // Community: a labelled Discord button, always one click away (for a brand that has a Discord).
+    // The title is centred in what is left of the bar between the tabs and this button.
+    let discord = ntm_brand::DISCORD.is_set().then(|| {
         let label = "Discord";
+        let join = ntm_brand::DISCORD.label.trim_end_matches('…');
         let g = p.layout_no_wrap(label.to_string(), Tokens::ui(12.0), Color32::WHITE);
         let w = g.size().x + 34.0;
         let r = Rect::from_min_size(pos2(wr.min.x - w - 14.0, rect.center().y - 12.0), vec2(w, 24.0));
-        let resp = ui.interact(r, egui::Id::unique("hdr-discord"), Sense::click()).on_hover_text(tl!("Join the NTM Discord"));
-        app.auto.add("header.discord", r, "Join the NTM Discord");
+        let resp = ui.interact(r, egui::Id::unique("hdr-discord"), Sense::click()).on_hover_text(crate::i18n::t(join));
+        app.auto.add("header.discord", r, join);
         ui.painter().rect_filled(r, 12.0, if resp.hovered() { t.accent_hover } else { t.accent });
         icons::paint(ui.painter(), Rect::from_center_size(pos2(r.min.x + 14.0, r.center().y), vec2(14.0, 14.0)), Icon::Chat, Color32::WHITE);
         ui.painter().galley(pos2(r.min.x + 25.0, r.center().y - g.size().y / 2.0), g, Color32::WHITE);
+        (r, resp)
+    });
+    {
         // Localized menus and user titles can be wider than English. Use the actual gap.
         let left = left_end + 12.0;
-        let right = r.min.x - 12.0;
+        let right = discord.as_ref().map_or(wr.min.x, |(r, _)| r.min.x) - 12.0;
         if right > left + 40.0 {
             let mut job = egui::text::LayoutJob::simple_singleline(title, Tokens::ui(14.0), t.tab_text_active);
             job.wrap.max_width = right - left;
@@ -164,10 +169,9 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, full: Rect) {
                 t.tab_text_active,
             );
         }
-
-        if resp.clicked() {
-            crate::links::open(app, ui.ctx(), crate::links::DISCORD);
-        }
+    }
+    if discord.is_some_and(|(_, resp)| resp.clicked()) {
+        crate::links::open(app, ui.ctx(), crate::links::DISCORD);
     }
     let popup_id = egui::Id::unique("workspaces-popup");
     if ws_resp.clicked() || wresp.clicked() {
@@ -258,7 +262,8 @@ mod tests {
         let help = rect(&app, "menu.Help");
         assert!(file[1] + file[3] <= MENU_HEIGHT + 0.5, "the menus sit in the top row: {file:?}");
         assert!(help[0] > file[0], "the menus run left to right: {file:?} {help:?}");
-        for id in ["header.home", "header.mode.import", "header.mode.edit", "header.mode.export", "header.discord"] {
+        let discord = ntm_brand::DISCORD.is_set().then_some("header.discord");
+        for id in ["header.home", "header.mode.import", "header.mode.edit", "header.mode.export"].into_iter().chain(discord) {
             let r = rect(&app, id);
             assert!(r[1] >= MENU_HEIGHT - 0.5, "{id} is below the menu row: {r:?}");
             assert!(r[1] + r[3] <= height + 0.5, "{id} is inside the header: {r:?}");

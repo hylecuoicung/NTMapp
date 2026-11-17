@@ -93,7 +93,11 @@ pub const SHELL_COMMANDS: &[(&str, &str, &[&str], Option<&str>)] = &[
     ("window.theme.softLight", "Soft", &["Window", "Theme", "Light Theme"], None),
     ("window.theme.system", "Sync with system", &["Window", "Theme"], None),
     ("edit.search", "Search…", &["Edit"], Some("Cmd+F")),
-    ("help.discord", "Join the NTM Discord…", &["Help"], None),
+    // The community links are the brand's (`brand/*.env`); a link the brand lacks has an empty
+    // label and is left out of the menus and the shortcut lists.
+    ("help.discord", ntm_brand::DISCORD.label, &["Help"], None),
+    ("help.website", ntm_brand::WEBSITE.label, &["Help"], None),
+    ("help.facebook", ntm_brand::FACEBOOK.label, &["Help"], None),
     ("help.systemInfo", "System Info…", &["Help"], None),
     ("help.about", "About NTM Digital Photo", &["Help"], None),
 ];

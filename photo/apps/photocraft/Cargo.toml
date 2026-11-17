@@ -27,6 +27,7 @@ photocraft-io = { workspace = true }
 photocraft-format = { workspace = true }
 photocraft-automation = { workspace = true }
 photocraft-ui-egui = { workspace = true }
+ntm-brand = { workspace = true }
 # Pen tablet pressure/tilt on macOS and X11 (the workspace's one isolated unsafe helper crate).
 photocraft-tablet = { workspace = true }
 eframe = { workspace = true, features = ["wgpu", "accesskit", "wayland", "x11", "persistence", "clipboard"] }
@@ -126,6 +127,7 @@ name = "mac_menu_appkit"
 harness = false
 
 [build-dependencies]
+ntm-brand = { workspace = true }
 # Icon + VERSIONINFO for photocraft.exe; build.rs only uses it when targeting Windows.
 winresource = "0.1"
 

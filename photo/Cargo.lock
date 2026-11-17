@@ -4559,6 +4559,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "ntm-brand"
+version = "0.1.0"
+
+[[package]]
 name = "num-bigint"
 version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5448,6 +5452,7 @@ dependencies = [
  "futures-lite",
  "log",
  "muda",
+ "ntm-brand",
  "objc2 0.6.5",
  "objc2-app-kit 0.3.2",
  "objc2-foundation 0.3.2",
@@ -5550,6 +5555,7 @@ dependencies = [
  "clap_complete",
  "clap_mangen",
  "craft-psd",
+ "ntm-brand",
  "photocraft-automation",
  "photocraft-cms",
  "photocraft-codecs",
@@ -5651,6 +5657,7 @@ dependencies = [
  "craft-psd",
  "exr",
  "flate2",
+ "ntm-brand",
  "photocraft-affinity",
  "photocraft-algo",
  "photocraft-cms",
@@ -5905,6 +5912,7 @@ dependencies = [
  "icu_casemap",
  "icu_locale_core",
  "log",
+ "ntm-brand",
  "photocraft-algo",
  "photocraft-cms",
  "photocraft-codecs",

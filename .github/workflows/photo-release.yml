@@ -1,34 +1,95 @@
 name: NTM Digital Photo Release
 
-# Builds the Windows installer and portable zip of NTM Digital Photo (the photo/ folder) and publishes
-# them as a GitHub release tagged photo-v<version>. The app looks for a newer release with that
-# tag prefix when it starts (photo/crates/ui-egui/src/release_feed.rs) and offers its installer for download.
+# Builds the Windows installer and portable zip of the photo editor (the photo/ folder) under one brand, or
+# both, and publishes each as a GitHub release: tagged photo-v<version> for NTM Digital and
+# photo-pixel-v<version> for Pixel Digital (brand/*.env). The app looks for a newer release with its
+# brand's tag prefix when it starts (photo/crates/ui-egui/src/release_feed.rs) and offers its
+# installer for download, so a brand's copies are never offered the other brand's installer.
 #
 # Run it by hand (Actions > NTM Digital Photo Release > Run workflow), or push a tag such as
-# photo-v0.24.0. A release must have a higher version than the one people run, or their app
-# offers nothing.
+# photo-v0.24.0 or photo-pixel-v0.24.0. A release must have a higher version than the one people
+# run, or their app offers nothing.
 
 on:
   workflow_dispatch:
     inputs:
+      brand:
+        description: 'Brand to publish: ntm (NTM Digital), pixel (Pixel Digital) or both (the same version for each).'
+        required: false
+        type: choice
+        options: [ntm, pixel, both]
+        default: ntm
       version:
-        description: 'Version to publish, e.g. 0.24.0. Empty: major.minor of photo/Cargo.toml, then one more than the last photo release of that major.minor.'
+        description: 'Version to publish, e.g. 0.24.0. Empty: major.minor of photo/Cargo.toml, then one more than the last photo release of any brand with that major.minor.'
         required: false
         type: string
   push:
-    tags: ['photo-v*']
+    tags: ['photo-v*', 'photo-pixel-v*']
 
 permissions:
   contents: write
 
 jobs:
+  # Which brands, and one version for all of them, decided once before anything is built.
+  plan:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    outputs:
+      brands: ${{ steps.plan.outputs.brands }}
+      version: ${{ steps.plan.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Choose the brands and the version
+        id: plan
+        shell: pwsh
+        env:
+          INPUT_BRAND: ${{ inputs.brand }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . ./brand/brand.ps1
+          $ids = @(Get-BrandIds)
+          $version = "$env:INPUT_VERSION".Trim()
+          if ($env:GITHUB_REF_TYPE -eq 'tag') {
+            # the brand whose tags start like this one
+            $tag = $env:GITHUB_REF_NAME
+            $brands = @($ids | Where-Object { $tag.StartsWith("$((Get-Brand $_)['PHOTO_TAG_PREFIX'])v") })
+            if ($brands.Count -ne 1) { throw "no brand has releases tagged like $tag" }
+            $version = $tag.Substring("$((Get-Brand $brands[0])['PHOTO_TAG_PREFIX'])v".Length)
+          } else {
+            $want = "$env:INPUT_BRAND".Trim()
+            if (-not $want) { $want = 'ntm' }
+            $brands = if ($want -eq 'both') { $ids } else { @($want) }
+            foreach ($b in $brands) { if ($b -notin $ids) { throw "there is no brand '$b' (brand files: $($ids -join ', '))" } }
+          }
+          if (-not $version) { $version = "$(& ./photo/packaging/windows/next-version.ps1 -App photo | Select-Object -Last 1)".Trim() }
+          # Windows Installer versions are three numbers; the last one goes up to 65535.
+          if ($version -notmatch '^\d{1,3}\.\d{1,3}\.\d{1,5}$') { throw "version must be three numbers like 0.21.0, got '$version'" }
+          foreach ($b in $brands) {
+            $tag = "$((Get-Brand $b)['PHOTO_TAG_PREFIX'])v$version"
+            gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
+            if ($LASTEXITCODE -eq 0) { throw "release $tag already exists; choose a higher version" }
+            $global:LASTEXITCODE = 0
+          }
+          "brands=[""$($brands -join '","')""]" >> $env:GITHUB_OUTPUT
+          "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Output "Publishing the photo editor $version for: $($brands -join ', ')"
+
   release:
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix:
+        brand: ${{ fromJSON(needs.plan.outputs.brands) }}
     runs-on: windows-latest
     defaults:
       run:
         working-directory: photo
     env:
       GH_TOKEN: ${{ github.token }}
+      # the brand every step builds under: the apps (cargo) and the installer scripts both read it
+      NTM_BRAND: ${{ matrix.brand }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -37,29 +98,26 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: photo
+          key: ${{ matrix.brand }}
       - name: Install WiX v5
         run: |
           dotnet tool install --global wix --version 5.0.2
           wix extension add --global WixToolset.UI.wixext/5.0.2 WixToolset.Util.wixext/5.0.2
-      - name: Choose the version
-        id: version
+      - name: Name the release
+        id: names
         shell: pwsh
         env:
-          INPUT_VERSION: ${{ inputs.version }}
+          VERSION: ${{ needs.plan.outputs.version }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $version = "$env:INPUT_VERSION".Trim()
-          if ($env:GITHUB_REF_TYPE -eq 'tag') { $version = $env:GITHUB_REF_NAME -replace '^photo-v', '' }
-          if (-not $version) { $version = "$(& ./packaging/windows/next-version.ps1 -TagPrefix photo- | Select-Object -Last 1)".Trim() }
-          # Windows Installer versions are three numbers; the last one goes up to 65535.
-          if ($version -notmatch '^\d{1,3}\.\d{1,3}\.\d{1,5}$') { throw "version must be three numbers like 0.24.0, got '$version'" }
-          gh release view "photo-v$version" --repo $env:GITHUB_REPOSITORY *> $null
-          if ($LASTEXITCODE -eq 0) { throw "release photo-v$version already exists; choose a higher version" }
-          $global:LASTEXITCODE = 0
-          cargo xtask version set $version
+          . ../brand/brand.ps1
+          $b = Get-Brand
+          "tag=$($b['PHOTO_TAG_PREFIX'])v$env:VERSION" >> $env:GITHUB_OUTPUT
+          "product=$($b['PHOTO_PRODUCT'])" >> $env:GITHUB_OUTPUT
+          "stem=$($b['PHOTO_EXE'])" >> $env:GITHUB_OUTPUT
+          cargo xtask version set $env:VERSION
           if ($LASTEXITCODE -ne 0) { throw 'cargo xtask version set failed' }
-          "version=$version" >> $env:GITHUB_OUTPUT
-          Write-Output "Publishing NTM Digital Photo $version"
+          Write-Output "Publishing $($b['PHOTO_PRODUCT']) $env:VERSION as $($b['PHOTO_TAG_PREFIX'])v$env:VERSION"
       - name: Build the installer and portable zip
         shell: pwsh
         run: pwsh packaging/windows/package.ps1 -Arch x64
@@ -77,18 +135,21 @@ jobs:
           Get-Content dist/release/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: ntmdigital-photo-windows-x64
+          name: ${{ steps.names.outputs.stem }}-windows-x64
           path: |
             photo/dist/release/*
             photo/dist/symbols/*
       - name: Publish the release
         shell: pwsh
+        env:
+          VERSION: ${{ needs.plan.outputs.version }}
+          TAG: ${{ steps.names.outputs.tag }}
+          PRODUCT: ${{ steps.names.outputs.product }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $version = '${{ steps.version.outputs.version }}'
           $files = (Get-ChildItem dist/release -File).FullName
           $target = @()
           if ($env:GITHUB_REF_TYPE -ne 'tag') { $target = @('--target', $env:GITHUB_SHA) }
-          $notes = "NTM Digital Photo $version for Windows x64: the installer (.msi), the portable copy (-portable.zip) and their checksums (SHA256SUMS.txt)."
-          gh release create "photo-v$version" @files --repo $env:GITHUB_REPOSITORY @target --title "NTM Digital Photo $version" --notes $notes
+          $notes = "$env:PRODUCT $env:VERSION for Windows x64: the installer (.msi), the portable copy (-portable.zip) and their checksums (SHA256SUMS.txt)."
+          gh release create $env:TAG @files --repo $env:GITHUB_REPOSITORY @target --title "$env:PRODUCT $env:VERSION" --notes $notes
           if ($LASTEXITCODE -ne 0) { throw 'gh release create failed' }

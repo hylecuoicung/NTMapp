@@ -65,7 +65,9 @@ if (-not $haveCert -and -not $haveAzure) {
 }
 
 $script:SignTool = Find-SignTool
-$common = @('sign', '/v', '/fd', 'SHA256', '/td', 'SHA256', '/d', 'NTM Digital Photo', '/du', 'https://github.com/hylecuoicung/NTMapp')
+. (Join-Path $PSScriptRoot '..\..\..\brand\brand.ps1')
+# the signature names the product of the brand being built (NTM_BRAND)
+$common = @('sign', '/v', '/fd', 'SHA256', '/td', 'SHA256', '/d', (Get-Brand)['PHOTO_PRODUCT'], '/du', 'https://github.com/hylecuoicung/NTMapp')
 $tmp = Join-Path ([IO.Path]::GetTempPath()) "photocraft-sign-$PID"
 New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 

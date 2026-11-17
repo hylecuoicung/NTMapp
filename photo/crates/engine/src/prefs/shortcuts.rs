@@ -196,7 +196,7 @@ pub enum BindKind {
 /// so Edit › Keyboard Shortcuts works the same with or without the app's UI.
 pub fn bindable_items() -> impl Iterator<Item = (&'static str, &'static str, &'static [&'static str], Option<&'static str>, BindKind)> {
     let engine = crate::command_specs().iter().map(|c| (c.id, c.label, c.menu, c.shortcut, BindKind::Command));
-    let shell = crate::shell_commands::SHELL_COMMANDS.iter().map(|c| (c.0, c.1, c.2, c.3, BindKind::Command));
+    let shell = crate::shell_commands::SHELL_COMMANDS.iter().filter(|c| !c.1.is_empty()).map(|c| (c.0, c.1, c.2, c.3, BindKind::Command));
     let tools = crate::shell_commands::TOOLS.iter().map(|t| (t.0, t.1, &["Tools"][..], t.2, BindKind::Tool));
     let hold = TEMPORARY_TOOLS.iter().map(|t| (t.0, t.1, &["Tools", "Temporary"][..], Some(t.2), BindKind::Hold));
     engine.chain(shell).chain(tools).chain(hold)

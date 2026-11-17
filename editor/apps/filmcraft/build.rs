@@ -20,10 +20,10 @@ mod windows {
     pub fn embed_resources() {
         let mut res = winresource::WindowsResource::new();
         res.set_icon("../../assets/app-icon/filmcraft.ico")
-            .set("ProductName", "NTM Digital Editor")
-            .set("FileDescription", "NTM Digital Editor")
-            .set("LegalCopyright", "Copyright (c) the NTM Digital contributors. MIT OR Apache-2.0.")
-            .set("OriginalFilename", "ntmdigital-editor.exe")
+            .set("ProductName", ntm_brand::editor::PRODUCT)
+            .set("FileDescription", ntm_brand::editor::PRODUCT)
+            .set("LegalCopyright", &format!("Copyright (c) the {} contributors. MIT OR Apache-2.0.", ntm_brand::COMPANY))
+            .set("OriginalFilename", &format!("{}.exe", ntm_brand::editor::EXE))
             .set("InternalName", "filmcraft");
         if let Err(e) = res.compile() {
             if std::env::var_os("FILMCRAFT_REQUIRE_WINRES").is_some() {

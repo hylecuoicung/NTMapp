@@ -105,9 +105,10 @@ fn unknown_strings_pass_through_and_languages_round_trip() {
 
 #[test]
 fn the_current_language_is_per_thread() {
-    // any entry the Spanish catalog has
+    // any entry the Spanish catalog has (one that names the product shows the brand's own name, which is
+    // not what the catalog says: `branded_text_follows_the_brand` covers those)
     let (entries, _) = catalog::parse_entries(include_str!("es.tsv"));
-    let Some((_, en, es)) = entries.into_iter().find(|(ctx, en, es)| ctx.is_empty() && en != es) else { return };
+    let Some((_, en, es)) = entries.into_iter().find(|(ctx, en, es)| ctx.is_empty() && en != es && !en.contains("NTM Digital")) else { return };
     set_current(Language::Es);
     assert_eq!((current(), t(&en)), (Language::Es, es.as_str()));
     // another thread (another test) still draws in English
@@ -115,6 +116,24 @@ fn the_current_language_is_per_thread() {
     assert_eq!(std::thread::spawn(move || t(&source).to_string()).join().ok(), Some(en.clone()));
     set_current(Language::En);
     assert_eq!(t(&en), en);
+}
+
+/// A string that names the product shows this build's brand in English and in a catalog's
+/// language; every other string is as it was. For the default brand nothing changes at all.
+#[test]
+fn branded_text_follows_the_brand() {
+    let (entries, _) = catalog::parse_entries(include_str!("es.tsv"));
+    let named: Vec<_> = entries.iter().filter(|(ctx, en, _)| ctx.is_empty() && en.contains(ntm_brand::source::EDITOR_PRODUCT)).collect();
+    assert!(!named.is_empty(), "the catalog has strings that name the product");
+    for (_, en, es) in named {
+        set_current(Language::Es);
+        assert_eq!(t(en), ntm_brand::rebrand(es), "{en}");
+        set_current(Language::En);
+        assert_eq!(t(en), ntm_brand::rebrand(en), "{en}");
+        assert!(t(en).contains(ntm_brand::editor::PRODUCT), "{en} -> {}", t(en));
+    }
+    assert_eq!(t("Quit"), "Quit");
+    set_current(Language::En);
 }
 
 #[test]

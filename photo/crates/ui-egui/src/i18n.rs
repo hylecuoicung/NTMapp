@@ -426,20 +426,39 @@ pub fn t(s: &str) -> &str {
     tr(current(), s)
 }
 
-/// Translate an English UI string; unknown strings come back unchanged.
+/// Translate an English UI string; unknown strings come back unchanged. Text that names the
+/// product ("About NTM Digital Photo") shows this build's brand.
 pub fn tr(lang: Lang, s: &str) -> &str {
-    lang.i18n().t(lang.lang, s)
+    branded(lang.i18n().t(lang.lang, s))
 }
 
 /// Like [`tr`], for an English string that needs a disambiguating `context`.
 pub fn tr_ctx<'a>(lang: Lang, context: &str, s: &'a str) -> &'a str {
-    lang.i18n().tc(lang.lang, context, s)
+    branded(lang.i18n().tc(lang.lang, context, s))
+}
+
+/// `text` as this build's brand shows it: the sources spell the default brand's product names, so
+/// under another brand a string naming the product is swapped for its own ([`ntm_brand::rebrand`]).
+/// Each distinct string is rebranded once and kept for the life of the process (a few at most), so
+/// the result borrows for as long as `text` does.
+fn branded(text: &str) -> &str {
+    if ntm_brand::IS_DEFAULT || !(text.contains(ntm_brand::source::PHOTO_PRODUCT) || text.contains(ntm_brand::source::EDITOR_PRODUCT)) {
+        return text;
+    }
+    static SEEN: OnceLock<std::sync::Mutex<HashMap<String, &'static str>>> = OnceLock::new();
+    let mut seen = SEEN.get_or_init(Default::default).lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    if let Some(done) = seen.get(text) {
+        return done;
+    }
+    let done: &'static str = Box::leak(ntm_brand::rebrand(text).into_owned().into_boxed_str());
+    seen.insert(text.to_string(), done);
+    done
 }
 
 /// A string keyed by its command id, falling back to the translation of the English `label`. Only
 /// PhotoCraft's own `@id` rows count ([`own_id`]).
 pub fn tr_id<'a>(lang: Lang, id: &str, label: &'a str) -> &'a str {
-    if own_id(lang, id, label) { lang.i18n().tid(lang.lang, id, label) } else { tr(lang, label) }
+    if own_id(lang, id, label) { branded(lang.i18n().tid(lang.lang, id, label)) } else { tr(lang, label) }
 }
 
 /// Whether `lang` has PhotoCraft's own `@id` row for `id` ([`Lang::owns`]: command ids are each

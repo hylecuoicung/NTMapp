@@ -45,7 +45,7 @@ pub fn install(app: &FilmcraftApp, ctx: egui::Context) -> (Receiver<String>, Men
     let mut native: Vec<(Item, MenuItem)> = Vec::new();
     let mut titles: Vec<(String, Submenu)> = Vec::new();
     let bar = Menu::new();
-    let app_menu = Submenu::new("NTM Digital Editor", true);
+    let app_menu = Submenu::new(ntm_brand::editor::PRODUCT, true);
     let [settings_label, hide_label, hide_others_label, quit_label] = NATIVE_APP_MENU;
     // FilmCraft ▸ Settings ▸ <category> (Premiere's app-menu layout; General is Cmd+,)
     let settings = Submenu::new(app.ui.language.tr(settings_label), true);
@@ -58,8 +58,8 @@ pub fn install(app: &FilmcraftApp, ctx: egui::Context) -> (Receiver<String>, Men
     }
     // About and Discord repeat Help menu commands: same translated labels, updated with them
     let label = |id: &str, english: &str| items.iter().find(|i| i.id == id).map_or_else(|| english.to_string(), |i| i.label.clone());
-    let about = MenuItem::with_id("app.about", label("app.about", "About NTM Digital Editor"), true, None);
-    let discord = MenuItem::with_id("help.discord", label("help.discord", "Join the NTM Discord…"), true, None);
+    let about = MenuItem::with_id("app.about", label("app.about", &format!("About {}", ntm_brand::editor::PRODUCT)), true, None);
+    let discord = MenuItem::with_id("help.discord", label("help.discord", ntm_brand::DISCORD.label), true, None);
     for (id, mi) in [("app.about", &about), ("help.discord", &discord)] {
         if let Some(it) = items.iter().find(|i| i.id == id) {
             // recorded as built (enabled, no shortcut), so the first update applies the real state
@@ -76,17 +76,31 @@ pub fn install(app: &FilmcraftApp, ctx: egui::Context) -> (Receiver<String>, Men
     // changes prompt (#1943); the `app.quit` command closes the window through it
     let (quit_id, quit_accel) = quit_item(app);
     let quit = MenuItem::with_id(quit_id, app.ui.language.tr(quit_label), true, quit_accel);
-    let _ = app_menu.append_items(&[
-        &about,
-        &discord,
-        &PredefinedMenuItem::separator(),
-        &settings,
-        &PredefinedMenuItem::separator(),
-        hide,
-        hide_others,
-        &PredefinedMenuItem::separator(),
-        &quit,
-    ]);
+    // the Discord item is only there for a brand that has a Discord
+    let _ = if ntm_brand::DISCORD.is_set() {
+        app_menu.append_items(&[
+            &about,
+            &discord,
+            &PredefinedMenuItem::separator(),
+            &settings,
+            &PredefinedMenuItem::separator(),
+            hide,
+            hide_others,
+            &PredefinedMenuItem::separator(),
+            &quit,
+        ])
+    } else {
+        app_menu.append_items(&[
+            &about,
+            &PredefinedMenuItem::separator(),
+            &settings,
+            &PredefinedMenuItem::separator(),
+            hide,
+            hide_others,
+            &PredefinedMenuItem::separator(),
+            &quit,
+        ])
+    };
     let _ = bar.append(&app_menu);
     let mut edit_menu = None;
     for top in MENUS {

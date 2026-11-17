@@ -1,16 +1,31 @@
 name: "NTM Digital Editor: test build"
 
-# A test build of NTM Digital Editor (the editor/ folder): the installer and portable zip as a workflow
-# artifact, nothing published. Releases people's apps are told about come from editor-release.yml.
+# A test build of the editor (the editor/ folder) under one brand, or both: the installer and portable
+# zip as a workflow artifact, nothing published. Releases people's apps are told about come from
+# editor-release.yml.
 on:
   workflow_dispatch:
+    inputs:
+      brand:
+        description: 'Brand to build: ntm (NTM Digital), pixel (Pixel Digital) or both.'
+        required: false
+        type: choice
+        options: [ntm, pixel, both]
+        default: ntm
 
 jobs:
   msi:
+    strategy:
+      fail-fast: false
+      matrix:
+        brand: ${{ fromJSON(inputs.brand == 'both' && '["ntm","pixel"]' || format('["{0}"]', inputs.brand)) }}
     runs-on: windows-latest
     defaults:
       run:
         working-directory: editor
+    env:
+      # the brand every step builds under: the apps (cargo) and the installer scripts both read it
+      NTM_BRAND: ${{ matrix.brand }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -19,6 +34,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: editor
+          key: ${{ matrix.brand }}
       - name: Install WiX v5
         run: |
           dotnet tool install --global wix --version 5.0.2
@@ -27,13 +43,26 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-        run: ./packaging/windows/next-version.ps1 -TagPrefix editor-
+        run: ./packaging/windows/next-version.ps1 -App editor
       - name: Build MSI
         shell: pwsh
         env:
           FILMCRAFT_REQUIRE_WINRES: '1'
         run: pwsh packaging/windows/package.ps1 -Arch x64
+      - name: Check the installer is still the product people have
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $msi = (Get-ChildItem dist/release -Filter '*.msi' | Select-Object -First 1).FullName
+          ../brand/check-identity.ps1 -App editor -Msi $msi
+      - name: Name the artifact
+        id: names
+        shell: pwsh
+        run: |
+          . ../brand/brand.ps1
+          "stem=$((Get-Brand)['EDITOR_EXE'])" >> $env:GITHUB_OUTPUT
       - uses: actions/upload-artifact@v4
         with:
-          name: ntmdigital-editor-windows-x64
+          name: ${{ steps.names.outputs.stem }}-windows-x64
           path: editor/dist/release/*

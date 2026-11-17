@@ -59,6 +59,7 @@ clap_mangen = { workspace = true }
 xtask = { path = "../../xtask" }
 
 [build-dependencies]
+ntm-brand = { workspace = true }
 # Icon + VERSIONINFO for photocraft-cli.exe; build.rs only uses it when targeting Windows.
 winresource = "0.1"
 

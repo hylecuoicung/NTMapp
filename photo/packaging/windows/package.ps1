@@ -1,12 +1,14 @@
 <#
 .SYNOPSIS
-  Build, sign and package NTM Digital Photo for Windows.
+  Build, sign and package the photo editor for Windows, under the brand NTM_BRAND names (ntm, the
+  default, or pixel: brand/*.env).
 
 .DESCRIPTION
-  Produces, in $env:DIST (default: dist/release):
+  Produces, in $env:DIST (default: dist/release), for the NTM Digital brand:
     ntmdigital-photo-<version>-windows-<arch>.msi            installer (WiX v5, per-user by default, per-machine optional)
     ntmdigital-photo-<version>-windows-<arch>-portable.zip   ntmdigital-photo.exe + ntmdigital-photo-cli.exe + portable.txt
     ntmdigital-photo-<version>-windows-<arch>-symbols.zip    photocraft.pdb + photocraft_cli.pdb (optional, for profilers)
+  (pixeldigital-photo-... for Pixel Digital.)
 
   The cargo binaries keep their internal names (photocraft.exe, photocraft-cli.exe); they are
   renamed as they are staged.
@@ -30,6 +32,24 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $Root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+
+# The brand: what this build is called and installs as (brand/*.env). The Rust build reads the same
+# NTM_BRAND, so the exe's own names and the installer's agree.
+. (Join-Path $Root '..\brand\brand.ps1')
+$Brand = Get-Brand
+$env:NTM_BRAND = $Brand['ID']
+$Product = $Brand['PHOTO_PRODUCT']
+$Stem = $Brand['PHOTO_EXE']
+$Exe = "$Stem.exe"
+$CliExe = "$Stem-cli.exe"
+
+# NOTICE, README and the text files spell the NTM Digital names; another brand's copies carry its own.
+function Copy-Branded([string] $Source, [string] $Destination) {
+  if ($Brand['ID'] -eq 'ntm') { Copy-Item -LiteralPath $Source -Destination $Destination; return }
+  if ((Test-Path -LiteralPath $Destination -PathType Container)) { $Destination = Join-Path $Destination (Split-Path -Leaf $Source) }
+  $text = ConvertTo-Brand (Get-Content -Raw -Encoding utf8 -LiteralPath $Source) $Brand
+  [IO.File]::WriteAllText($Destination, $text, (New-Object System.Text.UTF8Encoding($false)))
+}
 
 function Invoke-Native([string] $What, [scriptblock] $Block) {
   Write-Output "==> $What"
@@ -58,7 +78,7 @@ New-Item -ItemType Directory -Force -Path $Dist | Out-Null
 if (-not $env:PHOTOCRAFT_BUILD_SHA) { $env:PHOTOCRAFT_BUILD_SHA = (git -C $Root rev-parse HEAD 2>$null) }
 if (-not $env:PHOTOCRAFT_BUILD_DATE) { $env:PHOTOCRAFT_BUILD_DATE = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd') }
 
-Write-Output "NTM Digital Photo $Version for Windows $Arch ($Target)"
+Write-Output "$Product $Version for Windows $Arch ($Target)"
 
 if (-not $SkipBuild) {
   # Static CRT: no VC++ redistributable needed. Scoped to the target so host build scripts and
@@ -91,18 +111,18 @@ foreach ($check in @(@('photocraft.exe', 2), @('photocraft-cli.exe', 3))) {
 $Stage = Join-Path $TargetDir "windows-package\$Arch"
 Remove-Item -Recurse -Force $Stage -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $Stage | Out-Null
-# Ship under the NTM Digital Photo names (the cargo binaries keep their internal names).
-Copy-Item (Join-Path $Bin 'photocraft.exe') (Join-Path $Stage 'ntmdigital-photo.exe')
-Copy-Item (Join-Path $Bin 'photocraft-cli.exe') (Join-Path $Stage 'ntmdigital-photo-cli.exe')
+# Ship under the brand's names (the cargo binaries keep their internal names).
+Copy-Item (Join-Path $Bin 'photocraft.exe') (Join-Path $Stage $Exe)
+Copy-Item (Join-Path $Bin 'photocraft-cli.exe') (Join-Path $Stage $CliExe)
 
-& (Join-Path $PSScriptRoot 'sign.ps1') (Join-Path $Stage 'ntmdigital-photo.exe') (Join-Path $Stage 'ntmdigital-photo-cli.exe')
+& (Join-Path $PSScriptRoot 'sign.ps1') (Join-Path $Stage $Exe) (Join-Path $Stage $CliExe)
 
 # ---- font notices for the MSI ------------------------------------------------------------------
 # The portable ZIP already carries these notices; stage the complete files before MSI creation too.
 $Docs = Join-Path $Stage 'font-licences'
 New-Item -ItemType Directory -Force -Path $Docs | Out-Null
 # The existing MSI document group also carries notices for bundled egui font inputs.
-Copy-Item -LiteralPath (Join-Path $Root 'NOTICE'), (Join-Path $Root 'ATTRIBUTION.md') -Destination $Docs
+foreach ($f in 'NOTICE', 'ATTRIBUTION.md') { Copy-Branded (Join-Path $Root $f) $Docs }
 $HasCraftFontLicences = 1
 if ($env:CRAFT_FONTS_DIR) {
   foreach ($ofl in Get-ChildItem -Path (Join-Path $env:CRAFT_FONTS_DIR 'fonts\*\OFL.txt') -File -ErrorAction SilentlyContinue) {
@@ -151,13 +171,14 @@ $Banner = Join-Path $Stage 'installer-banner.bmp'
 $Dialog = Join-Path $Stage 'installer-dialog.bmp'
 New-InstallerArt (Join-Path $Root 'assets\app-icon\hicolor\256x256\apps\ai.storyteller.photocraft.png') $Banner $Dialog
 
-$Msi = Join-Path $Dist "ntmdigital-photo-$Version-windows-$Arch.msi"
+$Msi = Join-Path $Dist "$Stem-$Version-windows-$Arch.msi"
+$WixDefines = Get-WixDefines $Brand 'PHOTO'
 & (Join-Path $PSScriptRoot 'check-icons.ps1')
 Invoke-Native 'wix build' {
   wix build (Join-Path $PSScriptRoot 'photocraft.wxs') -arch $Arch `
     -ext WixToolset.UI.wixext -ext WixToolset.Util.wixext `
     -culture en-US -loc (Join-Path $PSScriptRoot 'photocraft.en-us.wxl') `
-    -d "Version=$MsiVersion" -d "DisplayVersion=$Version" -d "BinDir=$Stage" -d "IconPath=$(Join-Path $Root 'assets\app-icon\photocraft.ico')" `
+    @WixDefines -d "Version=$MsiVersion" -d "DisplayVersion=$Version" -d "BinDir=$Stage" -d "IconPath=$(Join-Path $Root 'assets\app-icon\photocraft.ico')" `
     -d "BannerBmp=$Banner" -d "DialogBmp=$Dialog" `
     -d "DocsDir=$Docs" -d "HasCraftFontLicences=$HasCraftFontLicences" `
     -o $Msi
@@ -167,19 +188,19 @@ Invoke-Native 'MSI shortcut icon validation (ICE50)' {
 }
 # Inspect the compiled tables and evaluate the duplicate guards with Windows Installer.
 # ICE validation alone cannot catch a well-formed condition with its meaning reversed.
-& (Join-Path $PSScriptRoot 'check-install-policy.ps1') -MsiPath $Msi
+& (Join-Path $PSScriptRoot 'check-install-policy.ps1') -MsiPath $Msi -Brand ($Brand['ID'])
 # wix writes its debug symbols (.wixpdb) next to the MSI; keep them out of the release assets.
 Remove-Item -Force -ErrorAction SilentlyContinue ([IO.Path]::ChangeExtension($Msi, '.wixpdb'))
 & (Join-Path $PSScriptRoot 'sign.ps1') $Msi
 
 # ---- portable zip ------------------------------------------------------------------------------
-$Portable = Join-Path $TargetDir "windows-package\ntmdigital-photo-$Version-windows-$Arch-portable"
+$Portable = Join-Path $TargetDir "windows-package\$Stem-$Version-windows-$Arch-portable"
 Remove-Item -Recurse -Force $Portable -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $Portable | Out-Null
 Copy-Item (Join-Path $Stage '*.exe') $Portable
 foreach ($f in 'README.md', 'LICENSE', 'LICENSE-MIT', 'LICENSE-APACHE', 'NOTICE', 'ATTRIBUTION.md') {
   $p = Join-Path $Root $f
-  if (Test-Path $p) { Copy-Item $p $Portable }
+  if (Test-Path $p) { Copy-Branded $p $Portable }
 }
 # Builds made with craft-fonts (CRAFT_FONTS_DIR, all official releases) embed its OFL-1.1 fonts:
 # ship each font's licence as OFL-<family-dir>.txt.
@@ -189,10 +210,10 @@ if ($env:CRAFT_FONTS_DIR) {
     if (Test-Path $lic) { Copy-Item $lic (Join-Path $Portable "OFL-$($_.Name).txt") }
   }
 }
-# portable.txt beside ntmdigital-photo.exe switches on portable mode: settings, presets and recovery
+# portable.txt beside the exe switches on portable mode: settings, presets and recovery
 # files go to PhotoCraftData\ next to the exe instead of %APPDATA% (#228; see app_dirs.rs).
-Copy-Item (Join-Path $PSScriptRoot 'portable.txt') $Portable
-$Zip = Join-Path $Dist "ntmdigital-photo-$Version-windows-$Arch-portable.zip"
+Copy-Branded (Join-Path $PSScriptRoot 'portable.txt') $Portable
+$Zip = Join-Path $Dist "$Stem-$Version-windows-$Arch-portable.zip"
 Remove-Item -Force $Zip -ErrorAction SilentlyContinue
 # The archive holds the files themselves. `-Path <folder>` puts the folder *in* the archive, so
 # the exe came out one level down and portable mode needs portable.txt beside the exe
@@ -202,7 +223,7 @@ Compress-Archive -Path (Join-Path $Portable '*') -DestinationPath $Zip
 $Check = Join-Path $TargetDir 'windows-package\portable-zip-check'
 Remove-Item -Recurse -Force $Check -ErrorAction SilentlyContinue
 Expand-Archive -Path $Zip -DestinationPath $Check -Force
-foreach ($f in 'ntmdigital-photo.exe', 'ntmdigital-photo-cli.exe', 'portable.txt') {
+foreach ($f in $Exe, $CliExe, 'portable.txt') {
   if (-not (Test-Path (Join-Path $Check $f))) { throw "the portable zip has no $f at its root: $Zip" }
 }
 Remove-Item -Recurse -Force $Check -ErrorAction SilentlyContinue
@@ -213,7 +234,7 @@ Remove-Item -Recurse -Force $Check -ErrorAction SilentlyContinue
 # Analyzer, Superluminal, Visual Studio) show the app's function names for the released
 # binaries (#688). Signing doesn't change the PDB signature an exe records, so they match the
 # signed exes; a rebuild of the same commit writes a PDB that doesn't.
-$Symbols = Join-Path $TargetDir "windows-package\ntmdigital-photo-$Version-windows-$Arch-symbols"
+$Symbols = Join-Path $TargetDir "windows-package\$Stem-$Version-windows-$Arch-symbols"
 Remove-Item -Recurse -Force $Symbols -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $Symbols | Out-Null
 foreach ($pdb in 'photocraft.pdb', 'photocraft_cli.pdb') {
@@ -221,8 +242,8 @@ foreach ($pdb in 'photocraft.pdb', 'photocraft_cli.pdb') {
   if (-not (Test-Path $p)) { throw "$pdb is missing from $($Bin), where the release build writes it" }
   Copy-Item $p $Symbols
 }
-Copy-Item (Join-Path $PSScriptRoot 'symbols.txt') $Symbols
-$SymbolsZip = Join-Path $Dist "ntmdigital-photo-$Version-windows-$Arch-symbols.zip"
+Copy-Branded (Join-Path $PSScriptRoot 'symbols.txt') $Symbols
+$SymbolsZip = Join-Path $Dist "$Stem-$Version-windows-$Arch-symbols.zip"
 Remove-Item -Force $SymbolsZip -ErrorAction SilentlyContinue
 Compress-Archive -Path $Symbols -DestinationPath $SymbolsZip
 
@@ -230,8 +251,8 @@ Compress-Archive -Path $Symbols -DestinationPath $SymbolsZip
 # here; .github/workflows/windows-arm64.yml installs and runs it on ARM64 instead.
 $HostArch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
 if ($Arch -ne 'arm64' -or $HostArch -eq 'arm64') {
-  Invoke-Native 'ntmdigital-photo-cli --version' { & (Join-Path $Stage 'ntmdigital-photo-cli.exe') --version }
+  Invoke-Native "$Stem-cli --version" { & (Join-Path $Stage $CliExe) --version }
 } else {
-  Write-Output "skipping ntmdigital-photo-cli --version: an $Arch build doesn't run on this $HostArch machine"
+  Write-Output "skipping $Stem-cli --version: an $Arch build doesn't run on this $HostArch machine"
 }
 Get-Item $Msi, $Zip, $SymbolsZip | Format-Table Name, Length
