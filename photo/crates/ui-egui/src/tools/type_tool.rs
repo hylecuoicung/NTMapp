@@ -60,6 +60,7 @@ pub(crate) use ime_edit::sync_ime;
 #[cfg(test)]
 pub(crate) use keys::flow_key;
 pub use keys::handle_keys;
+pub(crate) use keys::keypad_enters;
 pub use layout::layout;
 pub(crate) use layout::{hit_layer, offset_at, shows_own_layout};
 #[cfg(test)]

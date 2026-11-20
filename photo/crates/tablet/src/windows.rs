@@ -7,7 +7,8 @@
 //! track the physical barrel button state and which end of the pen is in use: `WH_GETMESSAGE` for
 //! the posted ones (`WM_POINTERDOWN`, `WM_POINTERUPDATE`, `WM_POINTERUP`) and `WH_CALLWNDPROC` for
 //! `WM_POINTERENTER` and `WM_POINTERLEAVE`, which Windows documents as sent to the window, so the
-//! queue hook alone may never see the pen arrive or leave.
+//! queue hook alone may never see the pen arrive or leave. The queue hook also notes which Enter
+//! key goes down, which winit doesn't tell apart ([`crate::keys`]).
 
 #![allow(unsafe_code, clippy::upper_case_acronyms)]
 
@@ -117,6 +118,8 @@ unsafe extern "system" {
 
 const WH_GETMESSAGE: i32 = 3;
 const WH_CALLWNDPROC: i32 = 4;
+/// `PM_REMOVE`: a `WH_GETMESSAGE` hook's `wParam` when the message is being taken off the queue.
+const PM_REMOVE: usize = 0x0001;
 /// `WM_POINTERENTER` (winuser.h).
 pub const WM_POINTERENTER: u32 = 0x0249;
 /// `WM_POINTERUPDATE` (winuser.h).
@@ -252,7 +255,7 @@ pub fn pen_screen_px() -> Option<(i32, i32)> {
     PEN_ID.load(Ordering::Relaxed).ne(&NO_PEN).then(|| unpack_px(PEN_PX.load(Ordering::Relaxed))).flatten()
 }
 
-/// `WH_GETMESSAGE`: the posted pointer messages, as the UI thread takes them from its queue.
+/// `WH_GETMESSAGE`: the posted pointer and key messages, as the UI thread takes them from its queue.
 unsafe extern "system" fn get_msg_proc(code: i32, w_param: usize, l_param: isize) -> isize {
     if code >= 0 && l_param != 0 {
         // SAFETY: Win32 guarantees that for code >= 0, l_param points to a valid MSG struct
@@ -262,6 +265,11 @@ unsafe extern "system" fn get_msg_proc(code: i32, w_param: usize, l_param: isize
         // messages (and ignores everything else) to clear a pen that left the tablet.
         crate::wintab::on_message(msg.message, msg.w_param, msg.l_param);
         handle_pointer_message(msg.message, msg.w_param, read_pen_flags);
+        // Which Enter key went down, for a message taken off the queue (not one only peeked at,
+        // which is seen again when it is taken).
+        if w_param == PM_REMOVE {
+            crate::keys::note_key_message(msg.message, msg.w_param, msg.l_param);
+        }
     }
     // SAFETY: CallNextHookEx passes the parameters down the hook chain. MSDN notes the first
     // parameter is ignored and can be null.

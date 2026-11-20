@@ -183,3 +183,36 @@ fn ending_a_type_mask_keeps_the_new_layer_selection() {
         assert_eq!(st.selected_layers(), want.into_iter().collect::<Vec<_>>(), "{text:?}, deselect={deselect}");
     }
 }
+
+fn enter_press(command: bool) -> egui::Event {
+    let modifiers = if command { egui::Modifiers::COMMAND } else { egui::Modifiers::NONE };
+    egui::Event::Key { key: egui::Key::Enter, physical_key: Some(egui::Key::Enter), pressed: true, repeat: false, modifiers }
+}
+
+/// Photoshop commits type on the numeric keypad's Enter, while the main Enter starts a new line
+/// (upstream photocraft#15084). egui reports both as the same key; which one it was comes from the
+/// platform (`Services::enter_keys`) as `app.keypad_enters`.
+#[test]
+fn the_keypad_enter_commits_and_the_main_enter_starts_a_new_line() {
+    let mut app = new_app();
+    let id = type_new(&mut app, "16");
+    app.keypad_enters = vec![false];
+    let mut app = keys(app, vec![enter_press(false)]);
+    assert_eq!(text_of(&app, 0, id).as_deref(), Some("16\n"), "the main Enter starts a new line");
+    assert!(app.ui.text_edit.is_some(), "and keeps editing");
+    app.keypad_enters = vec![true];
+    let app = keys(app, vec![enter_press(false)]);
+    assert!(app.ui.text_edit.is_none(), "the keypad's Enter commits");
+    assert_eq!(text_of(&app, 0, id).as_deref(), Some("16\n"), "without a new line");
+}
+
+#[test]
+fn keypad_enters_pair_the_platform_notes_with_the_enter_presses_in_order() {
+    let a = egui::Event::Key { key: egui::Key::A, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::NONE };
+    let release = egui::Event::Key { key: egui::Key::Enter, physical_key: None, pressed: false, repeat: false, modifiers: egui::Modifiers::NONE };
+    let events = [enter_press(false), release, a, enter_press(true), enter_press(false)];
+    // The ⌘/Ctrl press uses up the second note and is left out: it commits whichever Enter it is.
+    assert_eq!(super::keypad_enters(&[false, true, true], &events), [false, true]);
+    assert_eq!(super::keypad_enters(&[true], &events), [true, false], "a press without a note is the main Enter");
+    assert_eq!(super::keypad_enters(&[], &[]), [] as [bool; 0]);
+}

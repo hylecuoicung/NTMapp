@@ -111,6 +111,8 @@ pub fn handle_keys(app: &mut PhotocraftApp, ctx: &egui::Context) -> bool {
         .unwrap_or_else(|| ctx.input(|input| input.pointer.primary_down()));
     let mut custom_mutations = true;
     let mut deferred_custom = false;
+    // Enter presses without ⌘/Ctrl so far, to find each one's key in `app.keypad_enters`.
+    let mut plain_enters = 0;
     for (k, ev) in events.iter().enumerate() {
         if custom_mutations && !reset_route_eligible(app, ctx) {
             custom_mutations = false;
@@ -191,8 +193,13 @@ pub fn handle_keys(app: &mut PhotocraftApp, ctx: &egui::Context) -> bool {
             }
             egui::Event::Cut => cut_selection(app, ctx),
             egui::Event::Key { key, pressed: true, modifiers: m, .. } => {
+                let keypad_enter = *key == egui::Key::Enter && !m.command && {
+                    plain_enters += 1;
+                    app.keypad_enters.get(plain_enters - 1).copied().unwrap_or(false)
+                };
                 let edit = KeyEditContext { id, vertical_flow, edit: &ed, selection: (a, b), text: &text, char_count: n };
-                let mut flow = EventFlow { handled: &mut handled, index: k, custom_mutations: &mut custom_mutations, deferred_custom: &mut deferred_custom };
+                let mut flow =
+                    EventFlow { handled: &mut handled, index: k, custom_mutations: &mut custom_mutations, deferred_custom: &mut deferred_custom, keypad_enter };
                 handle_pressed_key(app, ctx, key, m, &edit, &mut flow);
             }
             egui::Event::Key { pressed: false, modifiers: m, .. } => handled[k] = !m.command,
@@ -223,11 +230,27 @@ struct KeyEditContext<'a> {
     char_count: usize,
 }
 
+/// Which of a frame's Enter presses without ⌘/Ctrl came from the numeric keypad, in order.
+/// `enter_keys` is the platform's note for each Enter press it saw, oldest first (`true` for the
+/// keypad's, see [`crate::Services::enter_keys`]); `events` the frame's input, still without the
+/// control channel's. The notes pair with the Enter presses in order, ⌘/Ctrl ones too, which are
+/// then left out: those commit whichever Enter it is, and a commit shortcut takes them out of the
+/// input before the Type tool reads it. A press without a note is the main Enter.
+pub(crate) fn keypad_enters(enter_keys: &[bool], events: &[egui::Event]) -> Vec<bool> {
+    let presses = events.iter().filter_map(|e| match e {
+        egui::Event::Key { key: egui::Key::Enter, pressed: true, modifiers, .. } => Some(modifiers.command),
+        _ => None,
+    });
+    presses.enumerate().filter(|(_, command)| !command).map(|(i, _)| enter_keys.get(i).copied().unwrap_or(false)).collect()
+}
+
 struct EventFlow<'a> {
     handled: &'a mut [bool],
     index: usize,
     custom_mutations: &'a mut bool,
     deferred_custom: &'a mut bool,
+    /// The key is the numeric keypad's Enter ([`keypad_enters`]).
+    keypad_enter: bool,
 }
 
 fn handle_pressed_key(
@@ -247,6 +270,8 @@ fn handle_pressed_key(
     match key {
         Key::Enter if modifiers.command && edit.edit.preedit.is_none() => commit_with(app, *modifiers),
         Key::Enter if modifiers.command => {} // IME owns confirmation until preedit ends.
+        // Photoshop: the numeric keypad's Enter commits; the main Enter starts a new line.
+        Key::Enter if flow.keypad_enter && edit.edit.preedit.is_none() => commit_with(app, *modifiers),
         Key::Enter => insert(app, "\n"),
         Key::Tab if !modifiers.command && !modifiers.alt && !modifiers.shift => {
             // egui queues focus navigation before this handler runs; consuming the

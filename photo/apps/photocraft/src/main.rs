@@ -669,6 +669,8 @@ fn main() -> eframe::Result {
             #[cfg(target_os = "windows")]
             if let Some(monitor) = tablet::install_windows() {
                 let _ = tablet_monitor_win.set(monitor);
+                // The same hook notes which Enter key goes down: type commits on the keypad's.
+                app.services.enter_keys = Some(Box::new(photocraft_tablet::keys::take_enter_keys));
             }
             // With Windows Ink disabled for the tablet, WinTab supplies the pen pressure, tilt,
             // rotation and eraser end; the vendor driver still moves the cursor.

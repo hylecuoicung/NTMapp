@@ -158,6 +158,7 @@ impl PhotocraftApp {
             pcrop: Default::default(),
             hover_doc: None,
             hover_layer: None,
+            keypad_enters: Vec::new(),
             canvas_hover_layer: None,
             clone_preview: None,
             info_sample: None,
@@ -287,6 +288,10 @@ impl eframe::App for PhotocraftApp {
         if cfg!(any(target_os = "windows", target_os = "linux")) && self.session.prefs().enhanced_controls.zoom_with_trackpad_pinch {
             wheel_nav::fold_legacy_pinch(ctx, raw_input);
         }
+        // Which of the OS's Enter presses were the numeric keypad's, before the control channel
+        // adds its own (those are the main Enter).
+        let enter_keys = self.services.enter_keys.as_mut().map(|take| take()).unwrap_or_default();
+        self.keypad_enters = type_tool::keypad_enters(&enter_keys, &raw_input.events);
         self.inject_synthetic(ctx, raw_input);
         // After the control channel's own events (`ui.type`) join the OS's, before any widget.
         widgets::cap_text_events(&mut raw_input.events);

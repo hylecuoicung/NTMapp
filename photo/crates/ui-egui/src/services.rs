@@ -487,6 +487,10 @@ pub type PenEndFn = Box<dyn Fn() -> Option<bool> + Send + Sync>;
 /// whether the app window is focused (to re-assert WinTab overlap priority on activation).
 pub type TabletPollFn = Box<dyn FnMut(bool)>;
 
+/// The Enter presses the platform saw since the last call, oldest first: `true` for the numeric
+/// keypad's Enter, which egui reports as the same key as the main one ([`Services::enter_keys`]).
+pub type EnterKeysFn = Box<dyn FnMut() -> Vec<bool>>;
+
 /// What the last self-update came to: `Ok` with the version it installed, `Err` with the reason it
 /// could not be installed, `None` when there is nothing to report ([`Services::last_update`]).
 pub type LastUpdateFn = fn() -> Option<Result<String, String>>;
@@ -624,6 +628,10 @@ pub struct Services {
     pub pen_screen_px: Option<PenScreenFn>,
     /// WinTab packet poll (Windows with Windows Ink disabled; see `photocraft_tablet::wintab`).
     pub tablet_poll: Option<TabletPollFn>,
+    /// Which Enter key each of the OS's Enter presses was (Windows: the UI thread's message hook,
+    /// see `photocraft_tablet::keys`). The Type tool commits on the keypad's Enter, as Photoshop
+    /// does; without it every Enter starts a new line.
+    pub enter_keys: Option<EnterKeysFn>,
     /// The persistent brush preset store, loading in the background (desktop; see
     /// `photocraft_engine::preset_store`). Attached to the session once it arrives; without
     /// one, brush presets are session-only unless the shell attached a store before startup.

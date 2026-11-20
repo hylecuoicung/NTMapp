@@ -272,9 +272,9 @@ pub(crate) use services::SAVE_OPTIONS_OPEN;
 pub(crate) use services::saved_revision_after_write;
 pub use services::{
     AdoptAutosaveFn, AppendTextFn, AutomationCommandFn, AutomationOpenPcraftFn, AutomationReadFn, AutomationWriteFn, AutosaveFn, AutosaveResultsFn, CapsLockFn,
-    CaptionStyleFn, ClipboardGetFn, ClipboardGetSvgFn, ClipboardSetFn, ClipboardUnreadableFn, CursorPosFn, DiscardAutosaveFn, EncodePngFn, ExportFn,
-    ExportSettings, ExternalSvgEditor, ExternalSvgSession, ExternalVectorSave, ExternalVectorSource, FileStamp, FileStampFn, FormatChoices, ImportFn, Inbox,
-    LastUpdateFn, LoadTextFn, OpenExternalSvgFn, OpenUrlFn, OsEventsFn, PenEndFn, PenScreenFn, PhotoshopShortcutsFn, PlaceInbox, QuitFn, RecoverFn,
+    CaptionStyleFn, ClipboardGetFn, ClipboardGetSvgFn, ClipboardSetFn, ClipboardUnreadableFn, CursorPosFn, DiscardAutosaveFn, EncodePngFn, EnterKeysFn,
+    ExportFn, ExportSettings, ExternalSvgEditor, ExternalSvgSession, ExternalVectorSave, ExternalVectorSource, FileStamp, FileStampFn, FormatChoices, ImportFn,
+    Inbox, LastUpdateFn, LoadTextFn, OpenExternalSvgFn, OpenUrlFn, OsEventsFn, PenEndFn, PenScreenFn, PhotoshopShortcutsFn, PlaceInbox, QuitFn, RecoverFn,
     Recoverable, RightButtonDownFn, SameFileFn, SaveFileFn, SaveTextFn, Services, SystemThemeFn, TabletPollFn, WindowFrameFn, WriteFn,
 };
 pub(crate) use services::{opaque_layer, saves_flat_in_place};
@@ -670,6 +670,9 @@ pub struct PhotocraftApp {
     pub(crate) hover_doc: Option<[f64; 2]>,
     /// Layer hovered in the Layers panel, outlined on the canvas.
     pub(crate) hover_layer: Option<photocraft_doc::LayerId>,
+    /// This frame's Enter presses without ⌘/Ctrl, in order: `true` for the numeric keypad's
+    /// ([`Services::enter_keys`]). The Type tool commits on those.
+    pub(crate) keypad_enters: Vec<bool>,
     /// Layer hovered on the canvas, highlighted in the Layers panel.
     pub(crate) canvas_hover_layer: Option<photocraft_doc::LayerId>,
     pub(crate) clone_preview: Option<crate::canvas::ClonePreviewCache>,
