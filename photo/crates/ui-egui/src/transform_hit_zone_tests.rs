@@ -289,25 +289,32 @@ fn outside_reference_point_owns_the_pointer_only_when_shown() {
 }
 
 /// Compare unopened controls with an active session at identical points, including a free interior.
+/// Outside the press band the unopened controls leave the pointer to the Move tool: a press there
+/// picks or moves layers, so no rotate arrow promises a turn (upstream photocraft#15454).
 #[test]
-fn unopened_move_controls_share_hover_but_keep_the_move_press_band() {
+fn unopened_move_controls_share_hover_only_where_a_press_reaches_them() {
     let app = app(QUAD, 1.0);
     let r = Rect::from_min_max(pos2(100.0, 100.0), pos2(500.0, 300.0));
-    for (p, starts_transform) in [
-        (pos2(100.0, 100.0), true),
-        (pos2(180.0, 95.0), true),
-        (pos2(180.0, 89.0), true),
-        (pos2(505.0, 150.0), true),
-        (pos2(518.0, 150.0), true),
-        (pos2(519.0, 150.0), false),
-        (pos2(300.0, 70.0), false),
-        (pos2(180.0, 101.0), false),
-        (pos2(620.0, 200.0), false),
-        (pos2(-20.0, -20.0), false),
+    for (p, starts_transform, shares_hover) in [
+        (pos2(100.0, 100.0), true, true),
+        (pos2(180.0, 95.0), true, true),
+        (pos2(180.0, 89.0), true, true),
+        (pos2(505.0, 150.0), true, true),
+        (pos2(518.0, 150.0), true, true),
+        (pos2(519.0, 150.0), false, false),
+        (pos2(300.0, 70.0), false, false),
+        (pos2(180.0, 101.0), false, true),
+        (pos2(620.0, 200.0), false, false),
+        (pos2(-20.0, -20.0), false, false),
     ] {
         let d = [f64::from(p.x), f64::from(p.y)];
-        assert_eq!(transform_controls_cursor(r, p), cursor(&app, &view(1.0), d, Modifiers::NONE), "{p:?}");
         assert_eq!(transform_controls_hit(r, p), starts_transform, "{p:?}");
+        if !shares_hover {
+            assert_eq!(transform_controls_cursor(r, p), None, "{p:?}: the Move tool's pointer");
+            assert_eq!(transform_controls_turn(r, p), None, "{p:?}: no rotate arrow");
+            continue;
+        }
+        assert_eq!(transform_controls_cursor(r, p), cursor(&app, &view(1.0), d, Modifiers::NONE), "{p:?}");
         match (transform_controls_turn(r, p), rotate_cursor_dir(&app, d)) {
             (None, None) => {}
             (Some(a), Some(b)) => near(Some([f64::from(a.x) / 16.0, f64::from(a.y) / 16.0]), b),

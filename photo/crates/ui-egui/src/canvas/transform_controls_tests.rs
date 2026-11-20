@@ -335,7 +335,11 @@ fn move_transform_controls_show_resize_and_rotate_cursors_before_first_interacti
         assert!(transform_controls_hit(r, p), "same region must start a transform");
     }
     assert_eq!(transform_controls_cursor(r, r.center()), Some(egui::CursorIcon::Default), "interior uses the default arrow");
-    assert_eq!(transform_controls_cursor(r, pos2(r.center().x, r.top() - 30.0)), Some(egui::CursorIcon::None));
+    // Beyond the band a press is the Move tool's (Auto-Select, a layer marquee): its pointer, no
+    // rotate arrow (upstream photocraft#15454).
+    assert_eq!(transform_controls_cursor(r, pos2(r.center().x, r.top() - 30.0)), None);
+    assert!(!transform_controls_hit(r, pos2(r.center().x, r.top() - 30.0)));
+    assert_eq!(transform_controls_turn(r, pos2(r.center().x, r.top() - 30.0)), None);
     // The rotate arrow points into the nearest edge or corner. Handles and the interior have none.
     let into = |p: Pos2| transform_controls_turn(r, p);
     assert_eq!(into(pos2(r.left() + r.width() * 0.25, r.top() - 12.0)), Some(vec2(0.0, 16.0)), "top edge");

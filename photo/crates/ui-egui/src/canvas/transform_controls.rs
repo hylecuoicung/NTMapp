@@ -85,7 +85,16 @@ fn controls_zone(r: Rect, p: Pos2) -> crate::transform_tool::Hit {
     crate::state::TransformSession::box_hit(&controls_quad(r), [f64::from(p.x), f64::from(p.y)], crate::transform_tool::HANDLE_PX)
 }
 
-/// Share the open session's screen-sized zones before the first interaction (#11097).
+/// The band just outside the controls where a press rotates; farther out a press is the Move
+/// tool's (Auto-Select, a layer marquee).
+fn in_turn_band(r: Rect, p: Pos2) -> bool {
+    r.expand(18.0).contains(p) && !r.expand(5.0).contains(p)
+}
+
+/// Share the open session's screen-sized zones before the first interaction (#11097). Outside
+/// the controls the rotate arrow shows only in the band where a press rotates: farther out the
+/// pointer is the Move tool's, as a press there picks or moves layers. A rotate arrow over another
+/// layer read as that layer being framed while a click selected it (upstream photocraft#15454).
 pub(super) fn transform_controls_cursor(r: Rect, p: Pos2) -> Option<egui::CursorIcon> {
     if !p.is_finite() {
         return None;
@@ -96,14 +105,15 @@ pub(super) fn transform_controls_cursor(r: Rect, p: Pos2) -> Option<egui::Cursor
         Hit::Corner(_) => egui::CursorIcon::ResizeNeSw,
         Hit::Edge(0 | 2) => egui::CursorIcon::ResizeVertical,
         Hit::Edge(_) => egui::CursorIcon::ResizeHorizontal,
-        Hit::Outside => egui::CursorIcon::None,
+        Hit::Outside if in_turn_band(r, p) => egui::CursorIcon::None,
+        Hit::Outside => return None,
         Hit::Inside | Hit::Pivot => egui::CursorIcon::Default,
     })
 }
 
-/// At any distance outside the controls, the same edge/corner direction as Free Transform.
+/// In the band where a press rotates, the same edge/corner direction as Free Transform.
 pub(super) fn transform_controls_turn(r: Rect, p: Pos2) -> Option<Vec2> {
-    if controls_zone(r, p) != crate::transform_tool::Hit::Outside {
+    if controls_zone(r, p) != crate::transform_tool::Hit::Outside || !in_turn_band(r, p) {
         return None;
     }
     let k = crate::state::TransformSession::box_turn_direction(&controls_quad(r), [f64::from(p.x), f64::from(p.y)])?;
@@ -119,7 +129,7 @@ pub(super) fn transform_controls_hit(r: Rect, p: Pos2) -> bool {
     use crate::transform_tool::Hit;
     match controls_zone(r, p) {
         Hit::Corner(_) | Hit::Edge(_) => true,
-        Hit::Outside => r.expand(18.0).contains(p) && !r.expand(5.0).contains(p),
+        Hit::Outside => in_turn_band(r, p),
         Hit::Inside | Hit::Pivot => false,
     }
 }
