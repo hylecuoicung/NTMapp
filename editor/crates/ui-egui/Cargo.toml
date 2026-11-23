@@ -33,6 +33,8 @@ egui_extras = { workspace = true }
 eframe = { workspace = true, features = ["default_fonts", "wgpu", "accesskit", "clipboard"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
+# Help ▸ Connect AI Apps edits ChatGPT/Codex's config.toml and keeps its comments and layout.
+toml_edit = "0.25"
 log = { workspace = true }
 rayon = { workspace = true }
 web-time = "1"

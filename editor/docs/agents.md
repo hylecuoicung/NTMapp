@@ -71,13 +71,21 @@ claude mcp add filmcraft -- "$env:LOCALAPPDATA\Programs\ArtCraft\FilmCraft\filmc
 claude mcp add filmcraft -- filmcraft-cli mcp
 ```
 
-**Claude Desktop without editing JSON.** In this fork, Help ▸ Connect Claude Desktop… does it:
-it finds Claude Desktop's `claude_desktop_config.json` (classic installer, packaged MSIX, or
-`%LOCALAPPDATA%\Claude-Data\claude_*`) and adds `"<exe>": {"command": "<the CLI beside the app>",
-"args": ["mcp"]}` under `mcpServers`. Everything else in the file is kept, and a `.bak` copy is
-saved first. Entries left by an uninstalled copy of the editor are removed. A damaged file is
-replaced only when you choose Replace. Then quit Claude Desktop fully and open it again
-(`crates/ui-egui/src/claude_connect.rs`).
+**AI apps without editing settings files.** In this fork, Help ▸ Connect AI Apps… does it for
+the apps it finds:
+- Claude Desktop: `claude_desktop_config.json` (classic installer, packaged MSIX, or
+  `%LOCALAPPDATA%\Claude-Data\claude_*`) gets `"<exe>": {"command": "<the CLI beside the app>",
+  "args": ["mcp"]}` under `mcpServers`;
+- ChatGPT desktop and the Codex CLI (one file, `%CODEX_HOME%` or `~/.codex/config.toml`) get
+  `[mcp_servers.<exe>]` with the same command and args, plus `tool_timeout_sec = 1800` (Codex's
+  own limit is 60 seconds, too short to transcribe or export) unless one is set;
+- Cursor: `~/.cursor/mcp.json` gets the `mcpServers` entry.
+
+Everything else in each file is kept (a TOML file keeps its comments and layout), and a `.bak`
+copy is saved first. Entries left by an uninstalled copy of the editor are removed. A damaged file
+is replaced only when you choose Replace. For any other AI app, the window shows the `mcpServers`
+entry with a button that copies it. Then quit each app fully and open it again
+(`crates/ui-egui/src/ai_connect.rs`).
 
 ### Tools
 

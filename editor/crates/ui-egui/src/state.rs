@@ -509,9 +509,9 @@ pub struct UiState {
     /// ([`crate::links::show_failed`]).
     #[serde(default)]
     pub failed_link: Option<crate::links::FailedLink>,
-    /// What Help ▸ Connect Claude Desktop… did, shown until closed ([`crate::claude_connect::show`]).
+    /// What Help ▸ Connect AI Apps… did, shown until closed ([`crate::ai_connect::show`]).
     #[serde(default)]
-    pub claude_connect: Option<crate::claude_connect::Report>,
+    pub ai_connect: Option<crate::ai_connect::Report>,
     /// The colour parameter an armed eyedropper will fill with the next pixel clicked in the Program
     /// monitor (Esc or a click elsewhere disarms it). Never saved.
     #[serde(skip)]
@@ -1042,7 +1042,7 @@ impl Default for UiState {
             show_scopes: false,
             status: String::new(),
             failed_link: None,
-            claude_connect: None,
+            ai_connect: None,
             eyedropper: None,
             keyframe_selection: Vec::new(),
             essential_sound_tab: "Edit".into(),

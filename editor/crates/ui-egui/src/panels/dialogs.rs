@@ -22,7 +22,7 @@ pub fn show(app: &mut FilmcraftApp, ctx: &egui::Context) {
     crate::panels::voiceover::show(app, ctx);
     crate::panels::remix::show(app, ctx);
     crate::links::show_failed(app, ctx);
-    crate::claude_connect::show(app, ctx);
+    crate::ai_connect::show(app, ctx);
     crate::panels::interchange_export::show(app, ctx);
     crate::panels::caption_export::show(app, ctx);
     crate::panels::frame_export::show(app, ctx);

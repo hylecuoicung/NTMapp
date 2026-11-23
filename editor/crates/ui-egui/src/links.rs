@@ -57,7 +57,7 @@ pub fn menu_hint(command: &str) -> Option<String> {
     }
     Some(
         match command {
-            "help.connectClaude" => tl!("Lets Claude Desktop open, edit and export projects with this app's tools."),
+            "help.connectAiApps" => tl!("Lets Claude Desktop, ChatGPT desktop, Cursor and other AI apps open, edit and export projects with this app's tools."),
             "help.revealLogFiles" => tl!("Saves this session's log and shows it in your file manager."),
             "help.systemCompatibilityReport" => tl!("Shows a report on this computer."),
             "app.about" => tl!("Shows the version, community links and credits in an NTM Digital Editor window."),

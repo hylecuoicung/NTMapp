@@ -48,12 +48,12 @@ macro_rules! tlf {
     };
 }
 
+pub mod ai_connect;
 pub mod automation;
 pub mod brand;
 pub mod calc;
 pub mod capture;
 mod cjk;
-pub mod claude_connect;
 pub mod control;
 pub mod crash;
 pub mod credits;

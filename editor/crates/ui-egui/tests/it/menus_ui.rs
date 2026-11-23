@@ -121,40 +121,52 @@ fn menu_items_toggles_and_help() {
     assert_eq!(d.call("ui.menu.invoke", json!({"id": "file.importFromMediaBrowser"}))["ok"], false);
 }
 
-/// Help ▸ Connect Claude Desktop… puts the editor's MCP server in Claude's settings, keeps what
-/// was there, and says what to do next; damaged settings are left alone until Replace.
+/// Help ▸ Connect AI Apps… puts the editor's MCP server in the settings of Claude Desktop, ChatGPT
+/// desktop (Codex's config.toml) and Cursor, keeps what was there, and says what to do next;
+/// damaged settings are left alone until Replace, and other apps get settings to copy.
 #[test]
-fn connect_claude_desktop_registers_the_editor_and_replaces_damaged_settings_only_when_asked() {
+fn connect_ai_apps_registers_the_editor_and_replaces_damaged_settings_only_when_asked() {
     let tmp = tempfile::tempdir().unwrap();
-    let claude = tmp.path().join("Claude");
+    let (claude, codex) = (tmp.path().join("Claude"), tmp.path().join(".codex"));
     std::fs::create_dir_all(&claude).unwrap();
+    std::fs::create_dir_all(&codex).unwrap();
     let file = claude.join("claude_desktop_config.json");
+    let toml = codex.join("config.toml");
     std::fs::write(&file, r#"{"preferences": {"sidebarMode": "chat"}}"#).unwrap();
-    let params = json!({"configDirs": [claude], "cli": tmp.path().join("editor-cli")});
+    std::fs::write(&toml, "# my settings\n[desktop]\nsansFontSize = 14\n").unwrap();
+    let targets = json!([{"app": "claude", "dir": claude}, {"app": "codex", "dir": codex}]);
+    let params = json!({"targets": targets, "cli": tmp.path().join("editor-cli")});
     let mut d = Driver::new();
     let menus = d.ok("ui.menu.list", json!({}));
-    let item = menus.as_array().unwrap().iter().find(|m| m["id"] == "help.connectClaude").cloned().unwrap();
+    let item = menus.as_array().unwrap().iter().find(|m| m["id"] == "help.connectAiApps").cloned().unwrap();
     assert_eq!(item["path"], json!(["Help"]));
 
-    let r = d.ok("ui.menu.invoke", json!({"id": "help.connectClaude", "params": params}));
+    let r = d.ok("ui.menu.invoke", json!({"id": "help.connectAiApps", "params": params}));
     d.frames(3);
-    assert_eq!(r["connected"], json!([file]));
+    assert_eq!(r["connected"], json!([{"app": "claude", "path": file}, {"app": "codex", "path": toml}]));
+    let server = r["server"].as_str().unwrap().to_string();
     let settings: Value = serde_json::from_str(&std::fs::read_to_string(&file).unwrap()).unwrap();
     assert_eq!(settings["preferences"]["sidebarMode"], "chat", "Claude's own settings stay");
-    assert_eq!(settings["mcpServers"][r["server"].as_str().unwrap()]["args"], json!(["mcp"]));
-    assert!(d.has("claudeConnect.close"));
-    assert!(!d.has("claudeConnect.replace"));
-    d.click("claudeConnect.close");
-    assert!(d.app().ui.claude_connect.is_none());
+    assert_eq!(settings["mcpServers"][&server]["args"], json!(["mcp"]));
+    let codex_now = std::fs::read_to_string(&toml).unwrap();
+    assert!(codex_now.starts_with("# my settings\n[desktop]\nsansFontSize = 14\n"), "{codex_now}");
+    assert!(codex_now.contains(&format!("[mcp_servers.{server}]")), "{codex_now}");
+    assert!(d.app().ui.status.contains("Claude Desktop, ChatGPT desktop / Codex"), "{}", d.app().ui.status);
+    assert!(d.has("aiConnect.close"));
+    assert!(!d.has("aiConnect.replace"));
+    d.click("aiConnect.copy");
+    assert_eq!(d.app().ui.status, "Copied the MCP settings");
+    d.click("aiConnect.close");
+    assert!(d.app().ui.ai_connect.is_none());
 
     std::fs::write(&file, "{ \"preferences\": {} } }").unwrap();
-    let r = d.ok("ui.menu.invoke", json!({"id": "help.connectClaude", "params": params}));
+    let r = d.ok("ui.menu.invoke", json!({"id": "help.connectAiApps", "params": params}));
     d.frames(3);
-    assert_eq!(r["connected"], json!([]));
+    assert_eq!(r["connected"], json!([{"app": "codex", "path": toml}]), "the TOML file already had the entry");
     assert_eq!(std::fs::read_to_string(&file).unwrap(), "{ \"preferences\": {} } }", "left as it was");
-    d.click("claudeConnect.replace");
-    let report = d.app().ui.claude_connect.clone().unwrap();
-    assert_eq!((report.connected.len(), report.broken.len()), (1, 0));
+    d.click("aiConnect.replace");
+    let report = d.app().ui.ai_connect.clone().unwrap();
+    assert_eq!((report.connected.len(), report.broken.len()), (2, 0));
     assert!(std::fs::read_to_string(&file).unwrap().contains("mcpServers"));
     assert_eq!(std::fs::read_to_string(claude.join("claude_desktop_config.json.bak")).unwrap(), "{ \"preferences\": {} } }");
 }
