@@ -53,6 +53,7 @@ pub mod brand;
 pub mod calc;
 pub mod capture;
 mod cjk;
+pub mod claude_connect;
 pub mod control;
 pub mod crash;
 pub mod credits;

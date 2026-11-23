@@ -121,6 +121,44 @@ fn menu_items_toggles_and_help() {
     assert_eq!(d.call("ui.menu.invoke", json!({"id": "file.importFromMediaBrowser"}))["ok"], false);
 }
 
+/// Help ▸ Connect Claude Desktop… puts the editor's MCP server in Claude's settings, keeps what
+/// was there, and says what to do next; damaged settings are left alone until Replace.
+#[test]
+fn connect_claude_desktop_registers_the_editor_and_replaces_damaged_settings_only_when_asked() {
+    let tmp = tempfile::tempdir().unwrap();
+    let claude = tmp.path().join("Claude");
+    std::fs::create_dir_all(&claude).unwrap();
+    let file = claude.join("claude_desktop_config.json");
+    std::fs::write(&file, r#"{"preferences": {"sidebarMode": "chat"}}"#).unwrap();
+    let params = json!({"configDirs": [claude], "cli": tmp.path().join("editor-cli")});
+    let mut d = Driver::new();
+    let menus = d.ok("ui.menu.list", json!({}));
+    let item = menus.as_array().unwrap().iter().find(|m| m["id"] == "help.connectClaude").cloned().unwrap();
+    assert_eq!(item["path"], json!(["Help"]));
+
+    let r = d.ok("ui.menu.invoke", json!({"id": "help.connectClaude", "params": params}));
+    d.frames(3);
+    assert_eq!(r["connected"], json!([file]));
+    let settings: Value = serde_json::from_str(&std::fs::read_to_string(&file).unwrap()).unwrap();
+    assert_eq!(settings["preferences"]["sidebarMode"], "chat", "Claude's own settings stay");
+    assert_eq!(settings["mcpServers"][r["server"].as_str().unwrap()]["args"], json!(["mcp"]));
+    assert!(d.has("claudeConnect.close"));
+    assert!(!d.has("claudeConnect.replace"));
+    d.click("claudeConnect.close");
+    assert!(d.app().ui.claude_connect.is_none());
+
+    std::fs::write(&file, "{ \"preferences\": {} } }").unwrap();
+    let r = d.ok("ui.menu.invoke", json!({"id": "help.connectClaude", "params": params}));
+    d.frames(3);
+    assert_eq!(r["connected"], json!([]));
+    assert_eq!(std::fs::read_to_string(&file).unwrap(), "{ \"preferences\": {} } }", "left as it was");
+    d.click("claudeConnect.replace");
+    let report = d.app().ui.claude_connect.clone().unwrap();
+    assert_eq!((report.connected.len(), report.broken.len()), (1, 0));
+    assert!(std::fs::read_to_string(&file).unwrap().contains("mcpServers"));
+    assert_eq!(std::fs::read_to_string(claude.join("claude_desktop_config.json.bak")).unwrap(), "{ \"preferences\": {} } }");
+}
+
 /// #2623: the engine's on/off commands in the Sequence and Markers menus show their state, so
 /// choosing one visibly turns it on or off.
 #[test]

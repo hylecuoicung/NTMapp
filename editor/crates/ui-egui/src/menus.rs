@@ -147,6 +147,7 @@ pub const UI_COMMANDS: &[UiCommand] = &[
     uic!("mode.import", "Import", [], None),
     uic!("mode.edit", "Edit", [], None),
     uic!("mode.export", "Export", ["File", "Export"], Some("Cmd+M")),
+    uic!("help.connectClaude", "Connect Claude Desktop…", ["Help"], None),
     uic!("help.revealLogFiles", "Reveal Log Files…", ["Help"], None),
     uic!("help.systemCompatibilityReport", "System Compatibility Report…", ["Help"], None),
     uic!("app.checkForUpdates", "Check for Updates…", ["Help"], None),
@@ -509,6 +510,7 @@ pub fn invoke_command(app: &mut FilmcraftApp, ctx: &egui::Context, id: &str, mut
             app.dialog = Some(crate::Dialog::About);
             return Ok(Value::Null);
         }
+        crate::claude_connect::COMMAND => return crate::claude_connect::run(app, &params),
         id if crate::links::url_for(id).is_some() => {
             let url = crate::links::url_for(id).unwrap_or_default();
             crate::links::open(app, ctx, url);

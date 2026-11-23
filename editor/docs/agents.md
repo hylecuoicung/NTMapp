@@ -71,6 +71,14 @@ claude mcp add filmcraft -- "$env:LOCALAPPDATA\Programs\ArtCraft\FilmCraft\filmc
 claude mcp add filmcraft -- filmcraft-cli mcp
 ```
 
+**Claude Desktop without editing JSON.** In this fork, Help ▸ Connect Claude Desktop… does it:
+it finds Claude Desktop's `claude_desktop_config.json` (classic installer, packaged MSIX, or
+`%LOCALAPPDATA%\Claude-Data\claude_*`) and adds `"<exe>": {"command": "<the CLI beside the app>",
+"args": ["mcp"]}` under `mcpServers`. Everything else in the file is kept, and a `.bak` copy is
+saved first. Entries left by an uninstalled copy of the editor are removed. A damaged file is
+replaced only when you choose Replace. Then quit Claude Desktop fully and open it again
+(`crates/ui-egui/src/claude_connect.rs`).
+
 ### Tools
 
 | Tool | Modes | Purpose |
