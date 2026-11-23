@@ -927,6 +927,43 @@ fn save_and_open_roundtrip() {
     std::fs::remove_dir_all(dir).ok();
 }
 
+#[test]
+fn a_project_saved_under_another_extension_gets_fcproj_added() {
+    let dir = tempfile::tempdir().unwrap();
+    let named = |n: &str| dir.path().join(n).to_string_lossy().to_string();
+    let mut s = demo();
+    // an agent's guess at the extension: the file still ends in .fcproj, and the result says where
+    let r = s.execute("file.saveAs", json!({"path": named("cut.pdproj")})).unwrap();
+    assert_eq!(r["path"], named("cut.pdproj.fcproj"));
+    assert!(dir.path().join("cut.pdproj.fcproj").is_file());
+    assert!(!dir.path().join("cut.pdproj").exists());
+    assert_eq!(s.path.as_deref(), Some(named("cut.pdproj.fcproj").as_str()));
+    // no extension, Save with a path, Save a Copy
+    assert_eq!(s.execute("file.saveAs", json!({"path": named("cut")})).unwrap()["path"], named("cut.fcproj"));
+    assert_eq!(s.execute("file.save", json!({"path": named("Take 1.2")})).unwrap()["path"], named("Take 1.2.fcproj"));
+    assert_eq!(s.execute("file.saveCopy", json!({"path": named("copy.json")})).unwrap()["path"], named("copy.json.fcproj"));
+    // the right extension, in any case, is kept as given
+    assert_eq!(s.execute("file.saveAs", json!({"path": named("CUT.FCPROJ")})).unwrap()["path"], named("CUT.FCPROJ"));
+    // a project opened from a file with another extension is saved back to that same file
+    std::fs::copy(named("cut.fcproj"), named("old.pdproj")).unwrap();
+    s.execute("file.open", json!({"path": named("old.pdproj")})).unwrap();
+    assert_eq!(s.execute("file.save", json!({})).unwrap()["path"], named("old.pdproj"));
+    assert_eq!(s.execute("file.save", json!({"path": named("old.pdproj")})).unwrap()["path"], named("old.pdproj"));
+    assert_eq!(s.execute("file.saveAs", json!({"path": named("old.pdproj")})).unwrap()["path"], named("old.pdproj"));
+    assert!(!dir.path().join("old.pdproj.fcproj").exists());
+}
+
+#[test]
+fn project_file_path_leaves_empty_paths_and_folders_alone() {
+    use super::commands::project_file_path;
+    assert_eq!(project_file_path(""), "");
+    assert_eq!(project_file_path("projects/"), "projects/");
+    assert_eq!(project_file_path(r"C:\projects\"), r"C:\projects\");
+    assert_eq!(project_file_path("a.fcproj"), "a.fcproj");
+    assert_eq!(project_file_path("a.FcProj"), "a.FcProj");
+    assert_eq!(project_file_path("a.fcproj.bak"), "a.fcproj.bak.fcproj");
+}
+
 /// Demo project with sync lock off on every track except V1/A1 (the A2 score spans every cut).
 fn demo_unlocked() -> Session {
     let mut s = demo();

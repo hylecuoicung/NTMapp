@@ -174,8 +174,9 @@ fn a_save_in_place_waits_for_the_lock_then_edits_the_latest_project() {
         let mut child = start_waiting_run(&args);
         assert_eq!(std::fs::read(&proj).unwrap(), before, "{save:?} wrote while another run held the lock");
         // an edit made meanwhile by the holder must survive: the waiter reads only after the lock is free
-        json_out(&cli(&["--project", &proj, "--save-as", &format!("{proj}.tmp"), "exec", "file.newBin", &format!("name=held-{}", save.len())]));
-        std::fs::rename(format!("{proj}.tmp"), &proj).unwrap();
+        // (a project saved under another name gets .fcproj added, so the spare copy is named with it)
+        json_out(&cli(&["--project", &proj, "--save-as", &format!("{proj}.tmp.fcproj"), "exec", "file.newBin", &format!("name=held-{}", save.len())]));
+        std::fs::rename(format!("{proj}.tmp.fcproj"), &proj).unwrap();
         drop(held);
         assert!(child.wait().unwrap().success(), "{save:?}");
         let tree = json_out(&cli(&["--project", &proj, "inspect", "project"])).to_string();

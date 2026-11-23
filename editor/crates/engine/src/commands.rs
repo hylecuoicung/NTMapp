@@ -1979,15 +1979,18 @@ fn build() -> Vec<CommandSpec> {
             crate::aaf_omf::import_document(s, p, "file.importAaf")
         }),
         cmd!("file.save", "Save", ["File"], Some("Cmd+S"), r#"{"path":str?}"#, always, |s, p| {
-            let path = str_p(p, "path").map(str::to_string).or_else(|| s.path.clone()).ok_or_else(|| bad("file.save", "no path (use Save As)"))?;
+            let path = str_p(p, "path")
+                .map(|given| named_project_file(s, given))
+                .or_else(|| s.path.clone())
+                .ok_or_else(|| bad("file.save", "no path (use Save As)"))?;
             write_project(s, &path, true)
         }),
         cmd!("file.saveAs", "Save As…", ["File"], Some("Cmd+Shift+S"), r#"{"path":str}"#, always, |s, p| {
-            let path = str_p(p, "path").ok_or_else(|| bad("file.saveAs", "need `path`"))?.to_string();
+            let path = named_project_file(s, str_p(p, "path").ok_or_else(|| bad("file.saveAs", "need `path`"))?);
             write_project(s, &path, true)
         }),
         cmd!("file.saveCopy", "Save a Copy…", ["File"], Some("Cmd+Alt+S"), r#"{"path":str}"#, always, |s, p| {
-            let path = str_p(p, "path").ok_or_else(|| bad("file.saveCopy", "need `path`"))?.to_string();
+            let path = named_project_file(s, str_p(p, "path").ok_or_else(|| bad("file.saveCopy", "need `path`"))?);
             write_project(s, &path, false)
         }),
         cmd!("file.revert", "Revert", ["File"], None, "{}", has_saved_path, |s, _| {
@@ -5322,6 +5325,22 @@ fn project_name_for(path: &str) -> Option<String> {
 fn name_project(p: &mut filmcraft_project::Project, name: String) {
     p.root.name.clone_from(&name);
     p.name = name;
+}
+
+/// The file a project is saved to when a caller names it: with the `.fcproj` extension (any case).
+/// Open Project lists only `.fcproj` files and the installer registers only that extension, so a
+/// project saved as `cut.pdproj` (an agent's guess) or `cut` could not be found again. The
+/// extension is added, never swapped, so saving `Take 1.2` cannot overwrite `Take 1.fcproj`. An
+/// empty path or a folder (ending in a separator) is left alone and fails to write as before.
+pub(crate) fn project_file_path(path: &str) -> String {
+    let has_ext = std::path::Path::new(path).extension().is_some_and(|e| e.eq_ignore_ascii_case("fcproj"));
+    if has_ext || path.is_empty() || path.ends_with(['/', '\\']) { path.to_string() } else { format!("{path}.fcproj") }
+}
+
+/// [`project_file_path`], except that the open project's own file is saved back under its own name
+/// (`--project old.pdproj --save` in the CLI, Save after opening such a file).
+fn named_project_file(s: &Session, given: &str) -> String {
+    if s.path.as_deref() == Some(given) { given.to_string() } else { project_file_path(given) }
 }
 
 fn write_project(s: &mut Session, path: &str, adopt: bool) -> Result<Value> {

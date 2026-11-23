@@ -83,7 +83,9 @@ if (-not $SkipBuild) {
   # Fail the build (rather than warn) if the icon/VERSIONINFO can't be embedded.
   $env:FILMCRAFT_REQUIRE_WINRES = '1'
   # Official packages include Kokoro natural voices (downloaded on first use). #2318 #3773
-  Invoke-Native "cargo build ($Target)" { cargo build --release --locked -p filmcraft -p filmcraft-cli --features filmcraft/neural-voices --target $Target }
+  # NTMapp also ships speech-to-text (Whisper, model downloaded on first use), in the app and in
+  # the CLI that Claude Desktop runs, so Claude can cut by what is said.
+  Invoke-Native "cargo build ($Target)" { cargo build --release --locked -p filmcraft -p filmcraft-cli --features filmcraft/neural-voices,filmcraft/whisper,filmcraft-cli/whisper --target $Target }
 }
 
 $Bin = Join-Path $TargetDir "$Target\release"

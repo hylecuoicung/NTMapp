@@ -64,6 +64,15 @@
           <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="$(var.ProductName)" Description="$(var.ProductName), a video editor" WorkingDirectory="INSTALLFOLDER" Advertise="yes" Icon="FilmcraftIcon.ico" IconIndex="0" />
         </File>
 
+        <!-- .fcproj, the project files Save writes: shown with the app's icon and opened by a
+             double-click, as the Linux MIME file and the macOS Info.plist already do. The ProgId is the
+             brand's own (two brands can be installed side by side); the last one installed opens them. -->
+        <ProgId Id="$(var.AppFolder).Project" Description="$(var.ProductName) Project" Icon="FilmcraftExe" IconIndex="0">
+          <Extension Id="fcproj" ContentType="application/x-filmcraft">
+            <Verb Id="open" Command="Open" TargetFile="FilmcraftExe" Argument="&quot;%1&quot;" />
+          </Extension>
+        </ProgId>
+
         <RegistryValue Root="HKMU" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\$(var.ExeName)" Value="[#FilmcraftExe]" Type="string" />
       <RegistryValue Root="HKMU" Key="Software\$(var.AppFolder)" Name="InstallDir" Value="[INSTALLFOLDER]" Type="string" />
       </Component>

@@ -6,8 +6,9 @@
   GUIDs, the install folders, the registry keys it writes, the file names, the shortcuts. If any of
   them changes, the new installer no longer updates the installed copy: it installs beside it. This
   compares the tables of the new MSI with those of the newest published release of the brand's app
-  (editor-v0.20.2 for the NTM Digital Editor) and fails on any difference. A brand with no release yet
-  has nothing to compare with, and passes.
+  (editor-v0.20.2 for the NTM Digital Editor) and fails on any difference, except rows the new
+  installer only adds to the file-type and registry tables (a newly registered file type). A brand
+  with no release yet has nothing to compare with, and passes.
 
   Needs Windows (the Windows Installer COM object) and gh with a token (GH_TOKEN) for the download.
   Run by the test-build workflows; it installs nothing and writes only to a temporary folder.
@@ -105,11 +106,18 @@ try {
   $before = Get-Identity $old[0].FullName
   $after = Get-Identity $Msi
   $problems = New-Object System.Collections.Generic.List[string]
+  $mayAdd = @('ProgId', 'Extension', 'Registry')
   foreach ($name in $queries.Keys) {
     $a = @($before[$name] | ForEach-Object { Format-Row $name $_ })
     $z = @($after[$name] | ForEach-Object { Format-Row $name $_ })
     foreach ($row in @($a | Where-Object { $_ -notin $z })) { $problems.Add("${name}: $tag has [$row], the new installer does not") }
-    foreach ($row in @($z | Where-Object { $_ -notin $a })) { $problems.Add("${name}: the new installer has [$row], $tag does not") }
+    foreach ($row in @($z | Where-Object { $_ -notin $a })) {
+      # A file type registered from now on (the editor's .fcproj) adds rows in the component that was
+      # already there, and the upgrade removes the old copy before installing, so it is still the same
+      # product. A changed row is also a removed one, and that still fails.
+      if ($name -in $mayAdd) { Write-Output "Added ${name}: [$row]"; continue }
+      $problems.Add("${name}: the new installer has [$row], $tag does not")
+    }
   }
   if ($problems.Count) {
     $problems | ForEach-Object { Write-Output "::error::$_" }
