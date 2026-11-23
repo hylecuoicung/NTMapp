@@ -14,11 +14,11 @@ on:
   workflow_dispatch:
     inputs:
       brand:
-        description: 'Brand to publish: ntm (NTM Digital), pixel (Pixel Digital) or both (the same version for each).'
+        description: 'Brand to publish: pixel (Pixel Digital, the default), ntm (NTM Digital) or both (the same version for each).'
         required: false
         type: choice
-        options: [ntm, pixel, both]
-        default: ntm
+        options: [pixel, ntm, both]
+        default: pixel
       version:
         description: 'Version to publish, e.g. 0.24.0. Empty: major.minor of photo/Cargo.toml, then one more than the last photo release of any brand with that major.minor.'
         required: false
@@ -59,7 +59,7 @@ jobs:
             $version = $tag.Substring("$((Get-Brand $brands[0])['PHOTO_TAG_PREFIX'])v".Length)
           } else {
             $want = "$env:INPUT_BRAND".Trim()
-            if (-not $want) { $want = 'ntm' }
+            if (-not $want) { $want = 'pixel' }
             $brands = if ($want -eq 'both') { $ids } else { @($want) }
             foreach ($b in $brands) { if ($b -notin $ids) { throw "there is no brand '$b' (brand files: $($ids -join ', '))" } }
           }

@@ -10,7 +10,8 @@ release tags. A brand is one file here:
 | `pixel.env` | Pixel Digital |
 
 `NTM_BRAND=pixel` picks one when building (`ntm` when unset). The workflows have a `brand` input
-for the same thing (`ntm`, `pixel`, or `both`).
+for the same thing (`pixel`, `ntm`, or `both`); there it defaults to `pixel`, the brand released
+unless NTM Digital is asked for. A pushed tag picks its brand by its prefix.
 
 ## What a brand file holds
 

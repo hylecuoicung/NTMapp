@@ -7,11 +7,11 @@ on:
   workflow_dispatch:
     inputs:
       brand:
-        description: 'Brand to build: ntm (NTM Digital), pixel (Pixel Digital) or both.'
+        description: 'Brand to build: pixel (Pixel Digital, the default), ntm (NTM Digital) or both.'
         required: false
         type: choice
-        options: [ntm, pixel, both]
-        default: ntm
+        options: [pixel, ntm, both]
+        default: pixel
 
 jobs:
   msi:
