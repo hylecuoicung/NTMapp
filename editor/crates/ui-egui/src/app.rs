@@ -244,7 +244,8 @@ impl FilmcraftApp {
     /// Close-request handling and control-driven synthetic input, in the original order.
     fn logic_control(&mut self, ctx: &egui::Context) {
         // Quitting with unsaved changes asks to save them first.
-        if ctx.input(|i| i.viewport().close_requested()) && panels::clip_dialogs::intercept_quit(self) {
+        // (NTMapp: and quitting while previews render or an export runs asks first)
+        if ctx.input(|i| i.viewport().close_requested()) && (crate::job_dialog::intercept_quit(self, ctx) || panels::clip_dialogs::intercept_quit(self)) {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
         }
         let had_synthetic = !self.synthetic.is_empty() || self.synthetic_pending_step.is_some();
@@ -492,7 +493,7 @@ impl eframe::App for FilmcraftApp {
                 self.synthetic_step_offered = true;
             }
         }
-        crate::render_progress::hold_keyboard(self, raw_input);
+        crate::job_dialog::hold_keyboard(self, ctx, raw_input);
     }
 
     /// Eframe's hidden logic callback: run the logic pass, sync the IME target context, then

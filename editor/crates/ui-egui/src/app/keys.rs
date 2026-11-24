@@ -29,7 +29,7 @@ impl FilmcraftApp {
         if (ctx.egui_wants_keyboard_input() && !divider_focused)
             || self.dialog == Some(Dialog::Shortcuts)
             || self.ui.clip_dialog.is_some()
-            || crate::render_progress::blocks_input(self)
+            || crate::job_dialog::blocks_input(self)
         {
             return;
         }
@@ -55,7 +55,7 @@ impl FilmcraftApp {
     /// arrive, so shortcuts work while a floating window has focus. craft-ui forwards nothing
     /// while that window's text field has focus.
     pub(crate) fn handle_forwarded_keys(&mut self, ctx: &egui::Context, events: Vec<egui::Event>) {
-        if events.is_empty() || self.dialog == Some(Dialog::Shortcuts) || crate::render_progress::blocks_input(self) {
+        if events.is_empty() || self.dialog == Some(Dialog::Shortcuts) || crate::job_dialog::blocks_input(self) {
             return;
         }
         let mut input = egui::InputState::default();

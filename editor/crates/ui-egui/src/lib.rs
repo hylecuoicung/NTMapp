@@ -59,7 +59,7 @@ pub mod crash;
 pub mod credits;
 pub mod dock;
 mod dock_ui;
-pub mod render_progress;
+pub mod job_dialog;
 pub use dock_ui::area_id as dock_area_id;
 /// Thumbnail textures kept before the least recently used are freed (each is up to 320 px wide).
 const MAX_THUMB_TEXTURES: usize = 512;
