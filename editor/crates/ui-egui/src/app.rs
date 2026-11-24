@@ -492,6 +492,7 @@ impl eframe::App for FilmcraftApp {
                 self.synthetic_step_offered = true;
             }
         }
+        crate::render_progress::hold_keyboard(self, raw_input);
     }
 
     /// Eframe's hidden logic callback: run the logic pass, sync the IME target context, then
