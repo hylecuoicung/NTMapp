@@ -1947,6 +1947,15 @@ fn build() -> Vec<CommandSpec> {
             q["format"] = json!("xml");
             crate::interchange::export(s, &q)
         }),
+        // NTMapp: the same FCP7 XML under the name someone handing a rough cut to Premiere Pro looks
+        // for; Premiere opens it with File > Import.
+        cmd!("file.exportPremiere", "Premiere Pro (XML)…", ["File", "Export"], None, r#"{"path":str,"sequence":id?}"#, has_seq, |s, p| {
+            let mut q = p.clone();
+            q["format"] = json!("xml");
+            let mut out = crate::interchange::export(s, &q)?;
+            out["next"] = json!("In Premiere Pro: File > Import, then choose this .xml");
+            Ok(out)
+        }),
         cmd!("file.exportFcpxml", "FCPXML…", ["File", "Export"], None, r#"{"path":str}"#, has_seq, |s, p| {
             let mut q = p.clone();
             q["format"] = json!("fcpxml");

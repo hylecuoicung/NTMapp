@@ -1051,6 +1051,25 @@ fn interchange_roundtrip_through_files() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+/// NTMapp: File ▸ Export ▸ Premiere Pro (XML)… writes the same FCP7 XML as Final Cut Pro XML…,
+/// says how to open it in Premiere, and refuses a call without a path.
+#[test]
+fn export_premiere_writes_the_final_cut_pro_xml_premiere_imports() {
+    let dir = std::env::temp_dir().join(format!("fc-premiere-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = |n: &str| dir.join(n).to_string_lossy().to_string();
+    let mut s = demo();
+    let r = s.execute("file.exportPremiere", json!({"path": path("cut.xml")})).unwrap();
+    assert!(r["next"].as_str().is_some_and(|n| n.contains("File > Import")), "{r}");
+    s.execute("file.exportFcp7Xml", json!({"path": path("fcp7.xml")})).unwrap();
+    let premiere = std::fs::read_to_string(path("cut.xml")).unwrap();
+    assert!(premiere.contains("<xmeml version="), "{premiere}");
+    assert_eq!(premiere, std::fs::read_to_string(path("fcp7.xml")).unwrap());
+    assert!(s.execute("file.exportPremiere", json!({})).is_err());
+    assert!(Session::default().execute("file.exportPremiere", json!({"path": path("none.xml")})).is_err(), "needs a sequence");
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
 /// `file.exportInterchange {format: "<unknown>"}` used to write FCP7 XML without a word.
 #[test]
 fn export_interchange_refuses_an_unknown_format() {

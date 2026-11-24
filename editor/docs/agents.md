@@ -87,6 +87,11 @@ is replaced only when you choose Replace. For any other AI app, the window shows
 entry with a button that copies it. Then quit each app fully and open it again
 (`crates/ui-egui/src/ai_connect.rs`).
 
+**Rough cuts for Premiere Pro.** In this fork, File ▸ Export ▸ Premiere Pro (XML)…
+(`file.exportPremiere {path, sequence?}`) writes the sequence as Final Cut Pro 7 XML, the same
+file as Final Cut Pro XML…, under the name an editor looks for. Premiere Pro opens it with
+File ▸ Import and links the media by its paths (Link Media asks when the paths differ there).
+
 ### Tools
 
 | Tool | Modes | Purpose |

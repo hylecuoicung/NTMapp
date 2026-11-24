@@ -104,12 +104,12 @@ fn community_links_everywhere() {
     let about = d.ids("about.");
     for (id, _, _) in links::all() {
         let want = format!("about.{}", id.trim_start_matches("help."));
-        assert!(about.iter().any(|a| *a == want), "{want} in {about:?}");
+        assert!(about.contains(&want), "{want} in {about:?}");
     }
     // ... and none for a link the brand does not have
     for id in ["help.discord", "help.website", "help.facebook"] {
         let name = format!("about.{}", id.trim_start_matches("help."));
-        assert_eq!(about.iter().any(|a| *a == name), links::url_for(id).is_some(), "{name} in {about:?}");
+        assert_eq!(about.contains(&name), links::url_for(id).is_some(), "{name} in {about:?}");
     }
     d.snapshot("about");
     d.ok("ui.key", json!({"key": "Escape"}));
@@ -121,11 +121,11 @@ fn community_links_everywhere() {
     let home = d.ids("import.link.");
     for (id, _, _) in links::all() {
         let want = format!("import.link.{}", id.trim_start_matches("help."));
-        assert!(home.iter().any(|a| *a == want), "{want} in {home:?}");
+        assert!(home.contains(&want), "{want} in {home:?}");
     }
     for id in ["help.discord", "help.website", "help.facebook"] {
         let name = format!("import.link.{}", id.trim_start_matches("help."));
-        assert_eq!(home.iter().any(|a| *a == name), links::url_for(id).is_some(), "{name} in {home:?}");
+        assert_eq!(home.contains(&name), links::url_for(id).is_some(), "{name} in {home:?}");
     }
     d.snapshot("home");
 }

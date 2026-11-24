@@ -85,9 +85,10 @@ fn tmp(name: &str) -> std::path::PathBuf {
 }
 
 /// Every File ▸ Export entry whose command needs a path, and the extension it saves.
-const SAVED: [(&str, &str); 6] = [
+const SAVED: [(&str, &str); 7] = [
     ("file.exportEdl", "edl"),
     ("file.exportFcp7Xml", "xml"),
+    ("file.exportPremiere", "xml"),
     ("file.exportFcpxml", "fcpxml"),
     ("file.exportOtio", "otio"),
     ("file.exportAle", "ale"),
@@ -141,7 +142,7 @@ fn media_from_the_menu_opens_the_export_mode() {
 #[test]
 fn file_export_entries_need_an_open_sequence() {
     let mut d = Driver::new(Session::default(), Some(tmp("noseq")), Asked::default());
-    for id in ["file.exportMedia", "file.exportEdl", "file.exportFcp7Xml", "file.exportFcpxml", "file.exportOtio"] {
+    for id in ["file.exportMedia", "file.exportEdl", "file.exportFcp7Xml", "file.exportPremiere", "file.exportFcpxml", "file.exportOtio"] {
         assert_eq!(d.call("ui.menu.invoke", json!({"id": id}))["ok"], json!(false), "{id}");
         assert_eq!(d.harness.state().ui.mode, Mode::Edit, "{id}");
     }
