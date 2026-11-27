@@ -92,6 +92,15 @@ entry with a button that copies it. Then quit each app fully and open it again
 file as Final Cut Pro XML…, under the name an editor looks for. Premiere Pro opens it with
 File ▸ Import and links the media by its paths (Link Media asks when the paths differ there).
 
+**Team editing rules.** In this fork, the MCP server carries the team's editing rules
+([`crates/automation/src/editing_rules.md`](../crates/automation/src/editing_rules.md), in Vietnamese,
+the same for every team and brand): rough cuts, the director's calls (action, cut, ok) told apart
+from dialogue, choosing takes, track layout, the effects that survive the Premiere Pro handoff, and
+what to deliver. They are appended to the server instructions, returned by the `editing_rules`
+tool, and pointed at from `command_run` and `command_batch`, since not every AI app shows server
+instructions to its model. What the user asks in the chat comes first. Changing the rules means
+editing that file and shipping a new build.
+
 ### Tools
 
 | Tool | Modes | Purpose |
@@ -101,6 +110,7 @@ File ▸ Import and links the media by its paths (Link Media asks when the paths
 | `command_batch` | both | run several commands in order `{steps: [{id, params}], stop_on_error}` → `{completed, failed, results}` |
 | `doc_inspect` | both | the project tree and the active sequence in one call (`project_inspect` + `sequence_inspect`) |
 | `render_preview` | both | same as `render_frame` |
+| `editing_rules` | both | the team's editing rules (this fork); read before the first edit |
 | `project_inspect` | both | bins and items with ids, types, durations; active sequence |
 | `sequence_inspect` | both | the active sequence: tracks, clips (`start` / `end` and `sourceIn` / `sourceOut` in ticks, frames, `speed`, `reverse`: the clip plays its `sourceIn` to `sourceOut` stretch backward, `gainDb`), effects, transitions, markers (name and `comment`), playhead, selection |
 | `media_import` | both | import files by absolute path (`paths`, an array; optional `bin`, `image_sequence`) |

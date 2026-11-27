@@ -502,3 +502,32 @@ async fn failed_output_stops_the_reader() {
     let ended = tokio::time::timeout(std::time::Duration::from_secs(30), server).await;
     assert!(ended.is_ok(), "the server kept reading after its output failed");
 }
+
+/// NTMapp: every client gets the team's editing rules: in the instructions, from the
+/// `editing_rules` tool, and as a pointer in the descriptions of the tools that edit.
+#[tokio::test(flavor = "multi_thread")]
+async fn the_team_editing_rules_reach_every_client() {
+    let mut c = Client::start(demo());
+    let init = c.init().await;
+    let instructions = init["result"]["instructions"].as_str().unwrap();
+    assert!(instructions.contains("doc_inspect") && instructions.contains(EDITING_RULES), "{init}");
+    let tools = c.ask(json!({"jsonrpc":"2.0","id":1,"method":"tools/list"})).await["result"]["tools"].as_array().cloned().unwrap();
+    let tool = |n: &str| tools.iter().find(|t| t["name"] == n).cloned().unwrap_or_else(|| panic!("{n} not listed"));
+    let rules = tool("editing_rules");
+    assert_eq!(rules["annotations"]["readOnlyHint"], true, "{rules}");
+    assert!(rules["description"].as_str().unwrap().contains("director"), "{rules}");
+    for n in ["command_run", "command_batch"] {
+        assert!(tool(n)["description"].as_str().unwrap().contains("`editing_rules`"), "{n} does not point at the rules");
+    }
+    let r = c.call(2, "editing_rules", json!({})).await;
+    assert_eq!(r["result"]["isError"], false, "{r}");
+    let text = r["result"]["content"][0]["text"].as_str().unwrap();
+    assert_eq!(text, EDITING_RULES);
+    // the rules this team asked for: director's calls, telling them from dialogue, Vietnamese transcripts
+    for want in ["\"action\"", "\"cut\"", "\"ok\"", "Phân biệt tiếng hô của đạo diễn với lời thoại", "\"language\": \"vi\"", "file.exportPremiere"]
+    {
+        assert!(text.contains(want), "the rules lack {want}");
+    }
+    let r = c.call(3, "editing_rules", json!({"topic": "cuts"})).await;
+    assert_eq!(r["error"]["code"], -32602, "{r}");
+}

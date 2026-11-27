@@ -315,7 +315,7 @@ impl FilmcraftMcp {
 
     #[tool(
         title = "Run a command",
-        description = "Run a command by id with JSON params, e.g. {\"id\":\"timeline.razor\",\"params\":{\"seconds\":3.5}} or {\"id\":\"effects.apply\",\"params\":{\"effect\":\"Gaussian Blur\"}}. Undoable edits land in History.",
+        description = "Run a command by id with JSON params, e.g. {\"id\":\"timeline.razor\",\"params\":{\"seconds\":3.5}} or {\"id\":\"effects.apply\",\"params\":{\"effect\":\"Gaussian Blur\"}}. Undoable edits land in History. Before the first edit, read the team's editing rules with `editing_rules` and follow them unless the user says otherwise.",
         annotations(read_only_hint = false, destructive_hint = true, idempotent_hint = false, open_world_hint = false)
     )]
     async fn command_run(&self, Parameters(p): Parameters<RunParams>) -> Result<CallToolResult, McpError> {
@@ -324,7 +324,7 @@ impl FilmcraftMcp {
 
     #[tool(
         title = "Run several commands",
-        description = "Run several commands in order: {steps: [{id, params?}], stop_on_error?: true}. Returns {completed, failed, results: [{ok, result | error}]}; each edit is its own undo step.",
+        description = "Run several commands in order: {steps: [{id, params?}], stop_on_error?: true}. Returns {completed, failed, results: [{ok, result | error}]}; each edit is its own undo step. Follow the team's editing rules (`editing_rules`).",
         annotations(read_only_hint = false, destructive_hint = true, idempotent_hint = false, open_world_hint = false)
     )]
     async fn command_batch(&self, Parameters(p): Parameters<BatchParams>) -> Result<CallToolResult, McpError> {
@@ -347,6 +347,18 @@ impl FilmcraftMcp {
         }
         let v = json!({"completed": completed, "failed": failed, "results": results});
         Ok(if failed > 0 { CallToolResult::error(vec![Content::text(v.to_string())]) } else { ok_json(&v) })
+    }
+
+    // NTMapp: the team's editing rules travel with every AI app that connects, as this tool, the
+    // tool descriptions above and the server instructions, because not every client shows the
+    // instructions to its model.
+    #[tool(
+        title = "Team editing rules",
+        description = "The team's editing rules: rough cuts, the director's calls (action, cut, ok) versus dialogue, choosing takes, tracks, effects that survive the Premiere Pro handoff, and what to deliver. Read them before the first edit of every job and follow them; the user's own instructions in the chat come first.",
+        annotations(read_only_hint = true, destructive_hint = false, idempotent_hint = true, open_world_hint = false)
+    )]
+    async fn editing_rules(&self) -> Result<CallToolResult, McpError> {
+        Ok(CallToolResult::success(vec![Content::text(EDITING_RULES)]))
     }
 
     #[tool(
@@ -581,6 +593,16 @@ impl FilmcraftMcp {
 
 const INSTRUCTIONS: &str = "FilmCraft video editor (Premiere Pro-class). Every edit is an engine command: `command_list` to discover ids/params, `command_run` to execute (undoable; `command_batch` runs several). `doc_inspect` (or `project_inspect`/`sequence_inspect`) returns ids you can pass to commands; `render_preview` shows the result. In bridge mode the `ui_*` tools drive the live app: `ui_elements` lists clickable ids, `ui_click`/`ui_drag`/`ui_key` operate it, `ui_screenshot` shows it. You cannot hear audio: to cut by what is said, run `transcript.generate` (download its speech model once with `transcript.downloadModel`), read the words and their times with `transcript.inspect` or `transcript.search`, then cut with `transcript.extract`/`transcript.lift`, `transcript.removePauses` or `transcript.removeFillers`. Projects are `.fcproj` files (`file.saveAs` adds the extension). To hand the cut to Premiere Pro, `file.exportPremiere` writes an `.xml` that Premiere opens with File > Import. Time is in ticks: 254016000000 per second (commands also accept `seconds`, `frame` or `timecode`).";
 
+/// NTMapp: the team's editing rules (`editing_rules.md`, in Vietnamese, for every team and brand).
+const EDITING_RULES: &str = include_str!("editing_rules.md");
+
+/// The instructions, then the editing rules the AI must follow.
+fn instructions() -> String {
+    format!(
+        "{INSTRUCTIONS} Before editing, follow the team's editing rules below (also returned by the `editing_rules` tool); the user's own instructions in the chat come first.\n\n{EDITING_RULES}"
+    )
+}
+
 /// Resources: the project (as `doc_inspect`) and the command catalog (as `command_list`).
 const DOCUMENT_URI: &str = "filmcraft://document";
 const COMMANDS_URI: &str = "filmcraft://commands";
@@ -597,7 +619,7 @@ impl ServerHandler for FilmcraftMcp {
     fn get_info(&self) -> rmcp::model::ServerConfig {
         rmcp::model::ServerConfig::new(rmcp::model::ServerCapabilities::builder().enable_tools().enable_resources().build())
             .with_server_info(rmcp::model::Implementation::new("filmcraft", env!("CARGO_PKG_VERSION")))
-            .with_instructions(INSTRUCTIONS.to_string())
+            .with_instructions(instructions())
     }
 
     /// Strict arguments and long exports in front of the tool router.
